@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUMIÈRE | Авторские свечи ручной работы</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        hut: {
+                            sand: '#F7F2EB',       /* Светлый нейтральный крем */
+                            linen: '#E5D6C5',      /* Нюдовый лён */
+                            clay: '#A88F80',       /* Дымчатая глина / тауп */
+                            rose: '#E58C7F',       /* Мягкая коралловая роза */
+                            berry: '#A4434F',      /* Тёплый ягодный терракот */
+                            wine: '#6B2D35',       /* Глубокий бордово-шоколадный */
+                            dark: '#3E1C22'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { scroll-behavior: smooth; }
+        .hero-viewport {
+            background-color: #E2D3C4;
+            overflow: hidden;
+            position: relative;
+            height: 94vh;
+            min-height: 660px;
+        }
+        .stream-track {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            white-space: nowrap;
+            will-change: transform;
+            user-select: none;
+        }
+        .cards-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 0 1.5rem;
+            gap: 2.25rem;
+            position: relative;
+        }
+        .candle-card {
+            border-radius: 20px;
+            background: #FFFFFF;
+            box-shadow: 0 16px 36px -8px rgba(107, 45, 53, 0.18);
+            padding: 7px;
+            flex-shrink: 0;
+            transition: transform 0.35s ease, box-shadow 0.35s ease;
+            position: relative;
+        }
+        /* Разные пропорции карточек для живого авторского коллажа */
+        .card-size-sm   { width: 135px; height: 165px; }
+        .card-size-md   { width: 175px; height: 215px; }
+        .card-size-lg   { width: 220px; height: 265px; }
+        .card-size-tall { width: 155px; height: 245px; }
+        .card-size-wide { width: 215px; height: 180px; }
+        .card-size-sq   { width: 170px; height: 170px; }
+        
+        /* Увеличенные карточки, заходящие за текст на задний фон */
+        .card-size-xl   { width: 290px; height: 350px; }
+        .card-size-hero { width: 330px; height: 390px; }
+
+        .card-behind {
+            z-index: 5; /* Ниже текста, создаёт глубину заднего плана */
+        }
+        .card-front {
+            z-index: 25; /* Парит поверх */
+        }
+
+        .candle-card:hover {
+            transform: scale(1.08) translateY(-8px) !important;
+            box-shadow: 0 24px 50px -6px rgba(107, 45, 53, 0.3);
+            z-index: 30;
+        }
+        .card-caption {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(6px);
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6B2D35;
+            padding: 4px 8px;
+            border-radius: 8px;
+            text-align: center;
+            pointer-events: none;
+        }
+        /* Текст на переднем плане поверх задних карточек */
+        .kinetic-phrase {
+            position: relative;
+            z-index: 20;
+            font-size: clamp(3.5rem, 8.5vw, 7.8rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            line-height: 0.95;
+            text-shadow: 0 4px 28px rgba(107, 45, 53, 0.32), 0 2px 8px rgba(62, 28, 34, 0.5);
+            pointer-events: none;
+        }
+        .banner-arrival {
+            opacity: 0;
+            transform: scale(0.92) translateY(24px);
+            transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+            z-index: 40;
+        }
+        .banner-arrival.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+        .card-shadow {
+            box-shadow: 0 8px 30px -4px rgba(107, 45, 53, 0.08);
+            transition: all 0.3s ease;
+        }
+        .card-shadow:hover {
+            box-shadow: 0 16px 36px -4px rgba(107, 45, 53, 0.16);
+            transform: translateY(-4px);
+        }
+    </style>
+</head>
+<body class="bg-hut-sand text-hut-dark font-sans antialiased selection:bg-hut-rose selection:text-white min-h-screen flex flex-col">
+
+    <!-- Top Announcement Bar -->
+    <div class="bg-hut-wine text-hut-sand text-xs py-2.5 text-center tracking-widest uppercase font-medium">
+        ✨ Бесплатная доставка по РФ от 3 500 ₽ • Натуральный соевый воск & селективные ароматы
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-40 bg-hut-sand/90 backdrop-blur-md border-b border-hut-linen">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <button id="mobileMenuBtn" class="md:hidden p-2 text-hut-wine hover:text-hut-berry focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+
+            <!-- Brand Logo -->
+            <a href="#" class="flex flex-col items-center">
+                <span class="font-serif text-2xl sm:text-3xl tracking-widest font-semibold text-hut-wine">LUMIÈRE</span>
+                <span class="text-[10px] tracking-widest uppercase text-hut-clay font-sans -mt-1">atelier de bougies</span>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-hut-clay tracking-wide">
+                <a href="#catalog" class="hover:text-hut-berry transition-colors">Каталог</a>
+                <a href="#about" class="hover:text-hut-berry transition-colors">О мастерской</a>
+                <a href="#reviews" class="hover:text-hut-berry transition-colors">Отзывы</a>
+                <a href="#faq" class="hover:text-hut-berry transition-colors">Вопросы</a>
+            </nav>
+
+            <!-- Cart Trigger Button -->
+            <div class="flex items-center space-x-4">
+                <button id="cartBtn" onclick="toggleCart(true)" class="relative p-2.5 rounded-full bg-hut-linen/60 hover:bg-hut-rose/25 text-hut-wine transition-colors" aria-label="Корзина">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                    </svg>
+                    <span id="cartBadge" class="absolute -top-1 -right-1 bg-hut-berry text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold scale-0 transition-transform">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Drawer Navigation -->
+        <div id="mobileMenu" class="hidden md:hidden border-b border-hut-linen bg-hut-sand px-6 py-4 space-y-3">
+            <a href="#catalog" class="block text-hut-wine text-sm font-medium py-1">Каталог</a>
+            <a href="#about" class="block text-hut-wine text-sm font-medium py-1">О мастерской</a>
+            <a href="#reviews" class="block text-hut-wine text-sm font-medium py-1">Отзывы покупателей</a>
+            <a href="#faq" class="block text-hut-wine text-sm font-medium py-1">Частые вопросы</a>
+        </div>
+    </header>
+
+    <section class="hero-viewport" id="heroViewport">
+        <div class="stream-track" id="streamTrack">
+            
+            <!-- ВЕРХНИЙ РЯД: проверенные уютные домашние фотографии свечей -->
+            <div class="cards-row">
+                <!-- 1. Увеличенный постер: заходит глубоко вниз за слово «ТАМ» -->
+                <div class="candle-card card-size-xl card-behind rotate-[-3deg] translate-y-20">
+                    <img src="images/top_1_plaid.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Свеча у пледа">
+                    <div class="card-caption">Уютный вечер</div>
+                </div>
+                <!-- 2. Компактный полароид: кофе и свеча -->
+                <div class="candle-card card-size-sm card-front rotate-[4deg] -translate-y-4">
+                    <img src="images/top_2_coffee.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Свеча на книгах">
+                    <div class="card-caption">Утренний кофе</div>
+                </div>
+                <!-- 3. Крупный HERO-кадр: свеча с живым пламенем за «СТАНОВИТСЯ» -->
+                <div class="candle-card card-size-hero card-behind rotate-[2deg] translate-y-28">
+                    <img src="images/top_3_woodslice.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1605651202774-7d573fd3f12d?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Свеча на спиле дерева">
+                    <div class="card-caption">Деревянный фитиль</div>
+                </div>
+                <!-- 4. Квадратный снимок: вечерний ритуал -->
+                <div class="candle-card card-size-sq card-front rotate-[-2deg] -translate-y-2">
+                    <img src="images/top_4_ritual.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Домашний уют">
+                    <div class="card-caption">Вечерний ритуал</div>
+                </div>
+                <!-- 5. Горизонтальный широкий формат: янтарная свеча -->
+                <div class="candle-card card-size-wide card-behind rotate-[-1.5deg] translate-y-12">
+                    <img src="images/top_5_amber.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Теплый свет дома">
+                    <div class="card-caption">Теплый свет</div>
+                </div>
+                <!-- 6. Небольшой акцент: льняной текстиль и свечи -->
+                <div class="candle-card card-size-sm card-front rotate-[3deg] -translate-y-4">
+                    <img src="images/top_6_linen.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1605651202774-7d573fd3f12d?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Льняной уют со свечой">
+                    <div class="card-caption">Льняной уют</div>
+                </div>
+                <!-- 7. Увеличенный кадр: свеча с сухоцветами за «LUMIÈRE» -->
+                <div class="candle-card card-size-xl card-behind rotate-[-2.5deg] translate-y-20">
+                    <img src="images/top_7_botanical.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Свеча с сухоцветами">
+                    <div class="card-caption">Аромат Грасса</div>
+                </div>
+            </div>
+
+            <!-- ЦЕНТРАЛЬНЫЙ ТЕКСТ: z-index 20 -->
+            <div class="kinetic-phrase px-6" id="heroPhrase">
+                ТАМ, ГДЕ ВОСК СТАНОВИТСЯ ИСКУССТВОМ • LUMIÈRE ATELIER
+            </div>
+
+            <!-- НИЖНИЙ РЯД: авторские интерьерные кадры в теплом домашнем стиле -->
+            <div class="cards-row">
+                <!-- 1. Широкий панорамный: завтрак в постели со свечой -->
+                <div class="candle-card card-size-wide card-front rotate-[2deg] translate-y-3">
+                    <img src="images/hero_bedroom_tray.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Утренний поднос в спальне">
+                    <div class="card-caption">Спальня & покой</div>
+                </div>
+                <!-- 2. Увеличенный кадр XL: кресло с книгой, вязаный плед и чашка чая -->
+                <div class="candle-card card-size-xl card-behind rotate-[-2.5deg] -translate-y-24">
+                    <img src="images/hero_reading_nook.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Уютный уголок для чтения с пледом">
+                    <div class="card-caption">Чтение при свечах</div>
+                </div>
+                <!-- 3. Компактный полароид: рифленая эко-керамика на травертине -->
+                <div class="candle-card card-size-sm card-front rotate-[3deg] translate-y-4">
+                    <img src="images/hero_ceramic_stone.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1605651202774-7d573fd3f12d?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Свеча в рифленой керамике на травертине">
+                    <div class="card-caption">Эко-керамика</div>
+                </div>
+                <!-- 4. Крупный центральный акцент HERO: живое пламя камина и деревянного фитиля -->
+                <div class="candle-card card-size-hero card-behind rotate-[-2deg] -translate-y-28">
+                    <img src="images/hero_fireplace_flame.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1572726729986-444747ebdf3d?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Камин и живое пламя деревянного фитиля">
+                    <div class="card-caption">Живое пламя</div>
+                </div>
+                <!-- 5. Квадратный снимок: дождливый вечер за окном, горячий чай и свеча -->
+                <div class="candle-card card-size-sq card-front rotate-[3deg] translate-y-2">
+                    <img src="images/hero_rainy_window.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1545048702-7936070012e7?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Свеча на дождливом подоконнике">
+                    <div class="card-caption">Уютный подоконник</div>
+                </div>
+                <!-- 6. Высокий вертикальный кадр XL: льняная скатерть, сушеные цитрусы и домашний уют -->
+                <div class="candle-card card-size-xl card-behind rotate-[-3deg] -translate-y-20">
+                    <img src="images/hero_dining_citrus.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1596433809252-260c2745dfdd?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Льняная скатерть, корица и домашний очаг">
+                    <div class="card-caption">Домашний очаг</div>
+                </div>
+                <!-- 7. Средний формат: распакованный подарочный крафтовый сет с льняной лентой -->
+                <div class="candle-card card-size-md card-front rotate-[2deg] translate-y-3">
+                    <img src="images/hero_gift_box.jpg" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?auto=format&fit=crop&w=600&q=80'" 
+                         class="w-full h-full object-cover rounded-xl" alt="Подарочный крафтовый сет свечей">
+                    <div class="card-caption">Теплый подарок</div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+            <div id="arrivalBanner" class="banner-arrival max-w-xl w-full bg-hut-sand/95 backdrop-blur-md rounded-3xl p-8 sm:p-10 border border-hut-linen shadow-2xl text-center space-y-5">
+                <span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase bg-hut-rose/25 text-hut-berry">
+                    Коллекция 2026 • Ручная работа
+                </span>
+                <h1 class="font-serif text-3xl sm:text-4xl lg:text-5xl text-hut-wine font-medium leading-tight">
+                    Тепло, тишина и живое пламя
+                </h1>
+                <p class="text-sm sm:text-base text-hut-clay font-light leading-relaxed">
+                    100% соевый воск, селективные парфюмерные формулы Грасса и натуральные деревянные фитили с уютным потрескиванием.
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+                    <a href="#catalog" class="px-8 py-3.5 bg-hut-wine hover:bg-hut-dark text-hut-sand rounded-full text-xs font-semibold uppercase tracking-wider transition-colors shadow-lg shadow-hut-wine/25">
+                        Открыть каталог
+                    </a>
+                    <button onclick="playFlight()" class="px-6 py-3.5 border border-hut-clay/40 hover:bg-hut-linen text-hut-wine rounded-full text-xs font-semibold uppercase tracking-wider transition-colors">
+                        ↻ Повторить полёт
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="border-y border-hut-linen bg-hut-linen/30 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <div class="flex flex-col items-center space-y-2">
+                    <div class="w-10 h-10 rounded-full bg-hut-sand border border-hut-linen flex items-center justify-center text-hut-berry text-base">🌱</div>
+                    <span class="text-xs uppercase font-medium tracking-wider text-hut-wine">Чистый эко-состав</span>
+                    <span class="text-[11px] text-hut-clay">100% соевый воск без парафина</span>
+                </div>
+                <div class="flex flex-col items-center space-y-2">
+                    <div class="w-10 h-10 rounded-full bg-hut-sand border border-hut-linen flex items-center justify-center text-hut-berry text-base">🪵</div>
+                    <span class="text-xs uppercase font-medium tracking-wider text-hut-wine">Деревянный фитиль</span>
+                    <span class="text-[11px] text-hut-clay">Уютный треск домашнего камина</span>
+                </div>
+                <div class="flex flex-col items-center space-y-2">
+                    <div class="w-10 h-10 rounded-full bg-hut-sand border border-hut-linen flex items-center justify-center text-hut-berry text-base">✨</div>
+                    <span class="text-xs uppercase font-medium tracking-wider text-hut-wine">Масла из Грасса</span>
+                    <span class="text-[11px] text-hut-clay">Французская селективная парфюмерия</span>
+                </div>
+                <div class="flex flex-col items-center space-y-2">
+                    <div class="w-10 h-10 rounded-full bg-hut-sand border border-hut-linen flex items-center justify-center text-hut-berry text-base">🎁</div>
+                    <span class="text-xs uppercase font-medium tracking-wider text-hut-wine">Эстетичная упаковка</span>
+                    <span class="text-[11px] text-hut-clay">Крафтовая бумага и ленты</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="catalog" class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1">
+        <div class="text-center max-w-2xl mx-auto mb-10 space-y-3">
+            <span class="text-xs font-semibold uppercase tracking-widest text-hut-rose">Коллекция</span>
+            <h2 class="font-serif text-3xl sm:text-4xl text-hut-wine">Каталог авторских свечей</h2>
+            <p class="text-hut-clay text-sm font-light">Каждая свеча отливается вручную в стеклянные и гипсовые подсвечники с заботой о деталях.</p>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="flex flex-wrap justify-center gap-2 mb-10" id="filterContainer">
+            <button onclick="filterProducts('all', this)" class="filter-btn active px-5 py-2 rounded-full text-xs font-medium uppercase tracking-wider bg-hut-wine text-white transition-all">Все товары</button>
+            <button onclick="filterProducts('cozy', this)" class="filter-btn px-5 py-2 rounded-full text-xs font-medium uppercase tracking-wider bg-hut-linen/60 hover:bg-hut-linen text-hut-wine transition-all">Уютные древесные</button>
+            <button onclick="filterProducts('floral', this)" class="filter-btn px-5 py-2 rounded-full text-xs font-medium uppercase tracking-wider bg-hut-linen/60 hover:bg-hut-linen text-hut-wine transition-all">Цветочные & свежие</button>
+            <button onclick="filterProducts('sweet', this)" class="filter-btn px-5 py-2 rounded-full text-xs font-medium uppercase tracking-wider bg-hut-linen/60 hover:bg-hut-linen text-hut-wine transition-all">Сладкие десертные</button>
+            <button onclick="filterProducts('gift', this)" class="filter-btn px-5 py-2 rounded-full text-xs font-medium uppercase tracking-wider bg-hut-linen/60 hover:bg-hut-linen text-hut-wine transition-all">Подарочные сеты</button>
+        </div>
+
+        <!-- Products Grid -->
+        <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    </section>
+
+    <section id="about" class="py-16 bg-hut-linen/40 border-t border-hut-linen">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1596433809252-260c2745dfdd?auto=format&fit=crop&w=800&q=80" 
+                         alt="Процесс создания свечей" 
+                         class="rounded-3xl card-shadow w-full h-[380px] object-cover"
+                         onerror="this.src='https://placehold.co/600x400/E5D6C5/6B2D35?text=Artisan+Candles'">
+                    <div class="absolute -bottom-5 -right-3 sm:right-6 bg-hut-sand p-4 rounded-2xl border border-hut-linen shadow-xl text-center max-w-[200px]">
+                        <p class="font-serif text-2xl font-bold text-hut-berry">100%</p>
+                        <p class="text-xs text-hut-clay">Ручная работа и чистые безопасные отдушки</p>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <span class="text-xs font-semibold uppercase tracking-widest text-hut-rose">Наша философия</span>
+                    <h3 class="font-serif text-3xl sm:text-4xl text-hut-wine leading-snug">
+                        Искусство медленной жизни и заботы о личном пространстве
+                    </h3>
+                    <p class="text-hut-dark/80 text-sm sm:text-base leading-relaxed font-light">
+                        Каждая свеча LUMIÈRE создается вручную в небольшой мастерской. Мы принципиально не используем парафин, нефтепродукты и искусственные фталаты.
+                    </p>
+                    <p class="text-hut-dark/80 text-sm sm:text-base leading-relaxed font-light">
+                        Только экологичный соевый воск, натуральные деревянные фитили и многогранные парфюмерные композиции Грасса, которые мягко раскрываются в интерьере.
+                    </p>
+                    <div class="pt-4 border-t border-hut-linen">
+                        <p class="font-serif italic text-lg text-hut-wine">Анна Васильева</p>
+                        <p class="text-xs text-hut-clay">Основательница и мастер мастерской</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="reviews" class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-xl mx-auto mb-12 space-y-2">
+            <span class="text-xs font-semibold uppercase tracking-widest text-hut-rose">Отзывы</span>
+            <h2 class="font-serif text-3xl text-hut-wine">Что говорят наши клиенты</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-2xl border border-hut-linen card-shadow space-y-3">
+                <div class="text-hut-rose text-sm">★★★★★</div>
+                <p class="text-hut-dark/80 text-sm font-light italic leading-relaxed">
+                    «Заказывала свечу "Кашемир и Ваниль". Фитиль потрескивает невероятно умиротворяюще! Аромат мягкий, не бьет в нос химией, комната сразу наполняется уютом.»
+                </p>
+                <div class="pt-2 text-xs font-semibold text-hut-wine">— Екатерина С., Москва</div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-hut-linen card-shadow space-y-3">
+                <div class="text-hut-rose text-sm">★★★★★</div>
+                <p class="text-hut-dark/80 text-sm font-light italic leading-relaxed">
+                    «Брала подарочный набор для подруги. Упаковка — чистый восторг! Шелковые ленты, крафтовая открытка, аромат ощущался ещё до открытия коробки.»
+                </p>
+                <div class="pt-2 text-xs font-semibold text-hut-wine">— Мария Л., Санкт-Петербург</div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-hut-linen card-shadow space-y-3">
+                <div class="text-hut-rose text-sm">★★★★★</div>
+                <p class="text-hut-dark/80 text-sm font-light italic leading-relaxed">
+                    «"Табачные листья & Бергамот" — абсолютный фаворит. Свеча прогорает ровно, без кратеров, хватает действительно надолго. Буду заказывать ещё.»
+                </p>
+                <div class="pt-2 text-xs font-semibold text-hut-wine">— Денис В., Казань</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="faq" class="py-16 bg-hut-linen/30 border-t border-hut-linen">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6">
+            <div class="text-center mb-10 space-y-2">
+                <span class="text-xs font-semibold uppercase tracking-widest text-hut-rose">Вопрос - Ответ</span>
+                <h2 class="font-serif text-3xl text-hut-wine">Часто задаваемые вопросы</h2>
+            </div>
+            <div class="space-y-4">
+                <details class="group bg-white rounded-xl border border-hut-linen p-5 cursor-pointer">
+                    <summary class="flex justify-between items-center font-medium text-hut-wine text-sm">
+                        Почему именно соевый воск, а не парафин?
+                        <span class="transition-transform group-open:rotate-180 text-hut-clay">▼</span>
+                    </summary>
+                    <p class="mt-3 text-hut-dark/80 text-sm leading-relaxed font-light">
+                        Соевый воск производится из бобов сои, он на 100% экологичен, не выделяет канцерогенов и копоти при горении, а также горит почти в два раза дольше парафиновых аналогов.
+                    </p>
+                </details>
+                <details class="group bg-white rounded-xl border border-hut-linen p-5 cursor-pointer">
+                    <summary class="flex justify-between items-center font-medium text-hut-wine text-sm">
+                        Как правильно жечь свечу с деревянным фитилем?
+                        <span class="transition-transform group-open:rotate-180 text-hut-clay">▼</span>
+                    </summary>
+                    <p class="mt-3 text-hut-dark/80 text-sm leading-relaxed font-light">
+                        При первом зажжении дайте воску расплавиться до самых стенок подсвечника (1-1.5 часа), чтобы избежать "туннелирования". Перед повторным зажжением аккуратно подрежьте обуглившийся кончик фитиля до 4-5 мм.
+                    </p>
+                </details>
+                <details class="group bg-white rounded-xl border border-hut-linen p-5 cursor-pointer">
+                    <summary class="flex justify-between items-center font-medium text-hut-wine text-sm">
+                        Сколько стоит и как осуществляется доставка?
+                        <span class="transition-transform group-open:rotate-180 text-hut-clay">▼</span>
+                    </summary>
+                    <p class="mt-3 text-hut-dark/80 text-sm leading-relaxed font-light">
+                        Мы отправляем заказы через СДЭК и Почту России по всей стране (от 300 ₽). При заказе на сумму от 3 500 ₽ доставка до пункта выдачи бесплатная.
+                    </p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-hut-dark text-hut-sand py-12 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="space-y-3">
+                <span class="font-serif text-2xl font-bold tracking-widest text-hut-sand">LUMIÈRE</span>
+                <p class="text-xs text-hut-linen/70 leading-relaxed">
+                    Мастерская теплых ароматов и природного уюта для вашего дома.
+                </p>
+            </div>
+            <div>
+                <h4 class="text-xs uppercase font-semibold text-hut-rose tracking-wider mb-3">Навигация</h4>
+                <ul class="text-xs space-y-2 text-hut-linen/80">
+                    <li><a href="#catalog" class="hover:text-white transition-colors">Каталог свечей</a></li>
+                    <li><a href="#about" class="hover:text-white transition-colors">О мастерской</a></li>
+                    <li><a href="#reviews" class="hover:text-white transition-colors">Отзывы клиентов</a></li>
+                    <li><a href="#faq" class="hover:text-white transition-colors">Доставка и оплата</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-xs uppercase font-semibold text-hut-rose tracking-wider mb-3">Контакты</h4>
+                <p class="text-xs text-hut-linen/80">Москва, Мастерская на Покровке</p>
+                <p class="text-xs text-hut-linen/80 mt-1">order@lumiere-candles.ru</p>
+                <p class="text-xs text-hut-linen/80 mt-1">+7 (999) 000-24-12</p>
+            </div>
+            <div>
+                <h4 class="text-xs uppercase font-semibold text-hut-rose tracking-wider mb-3">Подписка на новинки</h4>
+                <p class="text-xs text-hut-linen/80 mb-2">Получите скидку 10% на первый заказ</p>
+                <div class="flex">
+                    <input id="newsInput" type="email" placeholder="Ваш Email" class="px-3 py-2 text-xs rounded-l-lg bg-white/10 border border-hut-clay/40 text-white placeholder-hut-linen/50 focus:outline-none focus:border-hut-rose w-full">
+                    <button onclick="subscribeNewsletter()" class="bg-hut-berry hover:bg-hut-wine text-white text-xs px-4 rounded-r-lg transition-colors font-medium">ОК</button>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-6 border-t border-white/10 text-center text-xs text-hut-linen/50">
+            © 2026 LUMIÈRE Candles Atelier. Все права защищены.
+        </div>
+    </footer>
+
+    <div id="cartModal" class="fixed inset-0 bg-black/40 z-50 hidden backdrop-blur-sm transition-opacity flex justify-end">
+        <div class="bg-hut-sand w-full max-w-md h-full flex flex-col shadow-2xl p-6 overflow-hidden border-l border-hut-linen">
+            <div class="flex justify-between items-center pb-4 border-b border-hut-linen">
+                <div class="flex items-center space-x-2">
+                    <h3 class="font-serif text-2xl font-bold text-hut-wine">Ваша корзина</h3>
+                    <span id="cartCountHeader" class="text-xs bg-hut-linen text-hut-wine px-2 py-0.5 rounded-full font-semibold">0</span>
+                </div>
+                <button onclick="toggleCart(false)" class="p-2 text-hut-clay hover:text-hut-wine rounded-full text-lg">✕</button>
+            </div>
+
+            <!-- Free shipping meter -->
+            <div class="py-3 border-b border-hut-linen/70 text-xs space-y-1.5">
+                <div class="flex justify-between text-hut-dark font-medium">
+                    <span id="shippingMeterText">До бесплатной доставки: 3 500 ₽</span>
+                </div>
+                <div class="w-full bg-hut-linen/60 h-1.5 rounded-full overflow-hidden">
+                    <div id="shippingProgressBar" class="bg-hut-berry h-full w-0 transition-all duration-300"></div>
+                </div>
+            </div>
+
+            <!-- Cart Items Container -->
+            <div id="cartItemsList" class="flex-1 overflow-y-auto py-4 space-y-3"></div>
+
+            <!-- Cart Footer -->
+            <div class="pt-4 border-t border-hut-linen space-y-3">
+                <div class="flex justify-between text-sm text-hut-clay">
+                    <span>Сумма заказа</span>
+                    <span id="cartSubtotal" class="font-semibold text-hut-wine">0 ₽</span>
+                </div>
+                <div class="flex justify-between text-xs text-hut-clay">
+                    <span>Доставка</span>
+                    <span id="cartDeliveryText">Рассчитается при оформлении</span>
+                </div>
+                <div class="flex justify-between text-base font-bold text-hut-wine pt-2 border-t border-hut-linen">
+                    <span>Итого к оплате:</span>
+                    <span id="cartTotal" class="text-hut-berry">0 ₽</span>
+                </div>
+                <button id="checkoutBtn" onclick="openCheckoutModal()" class="w-full py-3.5 bg-hut-wine hover:bg-hut-dark text-white rounded-xl font-semibold tracking-wider text-xs uppercase transition-colors shadow-lg shadow-hut-wine/25">
+                    ОФОРМИТЬ ЗАКАЗ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkoutModal" class="fixed inset-0 bg-black/50 z-50 hidden backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-hut-sand rounded-2xl max-w-lg w-full p-6 md:p-8 card-shadow max-h-[90vh] overflow-y-auto border border-hut-linen">
+            <div class="flex justify-between items-center mb-6 border-b border-hut-linen pb-3">
+                <h3 class="font-serif text-2xl text-hut-wine font-semibold">Оформление заказа</h3>
+                <button onclick="closeCheckoutModal()" class="text-hut-clay hover:text-hut-wine text-lg">✕</button>
+            </div>
+
+            <form id="orderForm" onsubmit="submitOrder(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-hut-wine font-semibold mb-1">Имя и Фамилия</label>
+                    <input type="text" required placeholder="Анна Смирнова" class="w-full px-4 py-2.5 rounded-xl border border-hut-linen text-sm bg-white focus:outline-none focus:border-hut-rose">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-hut-wine font-semibold mb-1">Телефон</label>
+                        <input type="tel" required placeholder="+7 (999) 000-00-00" class="w-full px-4 py-2.5 rounded-xl border border-hut-linen text-sm bg-white focus:outline-none focus:border-hut-rose">
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-hut-wine font-semibold mb-1">Email</label>
+                        <input type="email" required placeholder="anna@example.com" class="w-full px-4 py-2.5 rounded-xl border border-hut-linen text-sm bg-white focus:outline-none focus:border-hut-rose">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-hut-wine font-semibold mb-1">Город и пункт выдачи СДЭК / адрес</label>
+                    <input type="text" required placeholder="г. Москва, ул. Арбат, 12" class="w-full px-4 py-2.5 rounded-xl border border-hut-linen text-sm bg-white focus:outline-none focus:border-hut-rose">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-hut-wine font-semibold mb-1">Пожелание к заказу (открытка, упаковка)</label>
+                    <textarea rows="2" placeholder="Напишите текст для открытки..." class="w-full px-4 py-2 rounded-xl border border-hut-linen text-sm bg-white focus:outline-none focus:border-hut-rose"></textarea>
+                </div>
+
+                <div class="bg-hut-linen/40 p-4 rounded-xl text-xs space-y-1.5 text-hut-dark border border-hut-linen">
+                    <div class="flex justify-between">
+                        <span>Сумма товаров:</span>
+                        <span id="modalOrderSubtotal" class="font-semibold text-hut-wine">0 ₽</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Доставка:</span>
+                        <span id="modalOrderShipping" class="font-semibold text-hut-wine">Бесплатно</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-bold text-hut-wine pt-1 border-t border-hut-linen">
+                        <span>Итого к оплате:</span>
+                        <span id="modalOrderTotal" class="text-hut-berry">0 ₽</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3.5 bg-hut-wine hover:bg-hut-dark text-white rounded-xl font-semibold tracking-wider text-xs uppercase transition-colors shadow-lg shadow-hut-wine/25">
+                    ПОДТВЕРДИТЬ И ЗАКАЗАТЬ
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-hut-dark text-white px-5 py-3 rounded-2xl shadow-xl transform translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center space-x-3 text-sm">
+        <span id="toastIcon">✨</span>
+        <span id="toastMsg">Товар добавлен в корзину</span>
+    </div>
+
+    <script>
+        // Catalog Products Database
+        const products = [
+            {
+                id: 1,
+                name: "Кашемир & Теплая Ваниль",
+                category: "cozy",
+                categoryLabel: "Уютные древесные",
+                price: 1490,
+                rating: 5.0,
+                wick: "Деревянный трескучий фитиль",
+                volume: "200 мл / 45 ч горения",
+                notes: "Французская ваниль, сандал, кашемир",
+                image: "https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+                id: 2,
+                name: "Табачные Листья & Бергамот",
+                category: "cozy",
+                categoryLabel: "Уютные древесные",
+                price: 1650,
+                rating: 4.9,
+                wick: "Хлопковый эко-фитиль",
+                volume: "220 мл / 50 ч горения",
+                notes: "Терпкий табак, бергамот, кедр, специи",
+                image: "https://images.unsplash.com/photo-1605651202774-7d573fd3f12d?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+                id: 3,
+                name: "Дикий Пион & Розовая Замша",
+                category: "floral",
+                categoryLabel: "Цветочные & свежие",
+                price: 1550,
+                rating: 4.8,
+                wick: "Деревянный фитиль",
+                volume: "200 мл / 45 ч горения",
+                notes: "Лепестки пиона, замша, красное яблоко",
+                image: "https://images.unsplash.com/photo-1596433809252-260c2745dfdd?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+                id: 4,
+                name: "Соленая Карамель & Миндаль",
+                category: "sweet",
+                categoryLabel: "Сладкие десертные",
+                price: 1390,
+                rating: 5.0,
+                wick: "Двойной хлопковый фитиль",
+                volume: "180 мл / 40 ч горения",
+                notes: "Морская соль, жареный миндаль, патока",
+                image: "https://images.unsplash.com/photo-1572726729986-444747ebdf3d?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+                id: 5,
+                name: "Морская Соль & Шалфей",
+                category: "floral",
+                categoryLabel: "Цветочные & свежие",
+                price: 1450,
+                rating: 4.9,
+                wick: "Деревянный фитиль",
+                volume: "200 мл / 45 ч горения",
+                notes: "Шалфей, морской бриз, амбретта",
+                image: "https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+                id: 6,
+                name: "Подарочный Сет «L'Atmosphère»",
+                category: "gift",
+                categoryLabel: "Подарочный сет",
+                price: 3890,
+                rating: 5.0,
+                wick: "3 свечи по 100 мл + спички в колбе",
+                volume: "Крафтовый фирменный бокс",
+                notes: "Ваниль, Табак-Бергамот, Дикий Пион",
+                image: "https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?auto=format&fit=crop&w=600&q=80"
+            }
+        ];
+
+        let cart = [];
+        let animFrameId = null;
+
+        const track = document.getElementById('streamTrack');
+        const heroPhrase = document.getElementById('heroPhrase');
+        const arrivalBanner = document.getElementById('arrivalBanner');
+        const productsGrid = document.getElementById('productsGrid');
+        const cartModal = document.getElementById('cartModal');
+        const cartItemsList = document.getElementById('cartItemsList');
+        const cartBadge = document.getElementById('cartBadge');
+        const cartCountHeader = document.getElementById('cartCountHeader');
+        const cartSubtotal = document.getElementById('cartSubtotal');
+        const cartTotal = document.getElementById('cartTotal');
+        const cartDeliveryText = document.getElementById('cartDeliveryText');
+        const shippingProgressBar = document.getElementById('shippingProgressBar');
+        const shippingMeterText = document.getElementById('shippingMeterText');
+        const checkoutModal = document.getElementById('checkoutModal');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        // Плавная кинематографичная кривая с глубоким замедлением в середине (хюгге-темп)
+        function smoothMiddleSlow(t) {
+            if (t <= 0) return 0;
+            if (t >= 1) return 1;
+
+            const a = 0.18; // мягкий разгон
+            const b = 0.22; // мягкая посадка к баннеру
+            const midLen = 1.0 - a - b;
+            const dip = 0.55; // 55% замедление в центре (комфортный просмотр карточек)
+
+            const denom = (2.0 * a / Math.PI) + midLen * (1.0 - 2.0 * dip / Math.PI) + (2.0 * b / Math.PI);
+            const vMax = 1.0 / denom;
+
+            if (t < a) {
+                return vMax * (2.0 * a / Math.PI) * (1.0 - Math.cos(Math.PI * t / (2.0 * a)));
+            } else if (t <= 1.0 - b) {
+                const u = t - a;
+                const distA = vMax * (2.0 * a / Math.PI);
+                return distA + vMax * (u - dip * (midLen / Math.PI) * (1.0 - Math.cos(Math.PI * u / midLen)));
+            } else {
+                const distMid = vMax * (2.0 * a / Math.PI) + vMax * midLen * (1.0 - 2.0 * dip / Math.PI);
+                const tau = t - (1.0 - b);
+                return distMid + vMax * (2.0 * b / Math.PI) * Math.sin(Math.PI * tau / (2.0 * b));
+            }
+        }
+
+        // Кинетический полёт пролётки с неторопливой серединой (единая стабильная скорость без изменения при ховере)
+        function playFlight() {
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            arrivalBanner.classList.remove('active');
+
+            const vw = window.innerWidth;
+            const startX = vw * 0.5; // Начинаем прямо с середины экрана
+            const phraseWidth = heroPhrase.offsetWidth;
+            const targetX = -(phraseWidth - vw + 80);
+            const duration = 14500; // Увеличенное время для расслабленного премиального темпа
+            const startTime = performance.now();
+
+            function frame(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = smoothMiddleSlow(progress);
+                const currentX = startX + (targetX - startX) * eased;
+
+                track.style.transform = `translate(${currentX}px, -50%)`;
+
+                if (progress > 0.88 && !arrivalBanner.classList.contains('active')) {
+                    arrivalBanner.classList.add('active');
+                }
+
+                if (progress < 1) {
+                    animFrameId = requestAnimationFrame(frame);
+                }
+            }
+
+            animFrameId = requestAnimationFrame(frame);
+        }
+
+        // Render products into catalog grid
+        function renderProducts(items) {
+            productsGrid.innerHTML = items.map(prod => `
+                <div class="bg-white rounded-2xl overflow-hidden card-shadow border border-hut-linen flex flex-col justify-between">
+                    <div>
+                        <div class="relative h-64 overflow-hidden bg-hut-sand">
+                            <img src="${prod.image}" alt="${prod.name}" 
+                                 class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                                 onerror="this.src='https://placehold.co/600x400/E5D6C5/6B2D35?text=${encodeURIComponent(prod.name)}'">
+                            <span class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-hut-wine text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                ${prod.categoryLabel}
+                            </span>
+                        </div>
+                        <div class="p-6 space-y-2.5">
+                            <div class="flex items-center justify-between text-xs text-hut-clay">
+                                <span>⭐ ${prod.rating}</span>
+                                <span>${prod.volume}</span>
+                            </div>
+                            <h3 class="font-serif text-xl font-medium text-hut-wine leading-snug">${prod.name}</h3>
+                            <p class="text-xs text-hut-clay font-light leading-relaxed">
+                                <span class="font-medium text-hut-wine">Ноты:</span> ${prod.notes}
+                            </p>
+                            <p class="text-[11px] text-hut-rose italic">${prod.wick}</p>
+                        </div>
+                    </div>
+                    <div class="p-6 pt-0 mt-2 flex items-center justify-between border-t border-hut-sand">
+                        <span class="text-xl font-bold text-hut-wine">${prod.price.toLocaleString('ru-RU')} ₽</span>
+                        <button onclick="addToCart(${prod.id})" class="px-5 py-2.5 bg-hut-wine hover:bg-hut-berry text-white rounded-xl text-xs font-semibold uppercase tracking-wider transition-colors shadow-md">
+                            В корзину
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Filter products
+        function filterProducts(cat, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('bg-hut-wine', 'text-white');
+                b.classList.add('bg-hut-linen/60', 'text-hut-wine');
+            });
+            btn.classList.remove('bg-hut-linen/60', 'text-hut-wine');
+            btn.classList.add('bg-hut-wine', 'text-white');
+
+            if (cat === 'all') {
+                renderProducts(products);
+            } else {
+                renderProducts(products.filter(p => p.category === cat));
+            }
+        }
+
+        // Cart functions
+        function addToCart(id) {
+            const prod = products.find(p => p.id === id);
+            if (!prod) return;
+
+            const existing = cart.find(item => item.id === id);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({ ...prod, quantity: 1 });
+            }
+
+            updateCartUI();
+            showToast(`«${prod.name}» добавлена в корзину`);
+        }
+
+        function changeQuantity(id, delta) {
+            const idx = cart.findIndex(item => item.id === id);
+            if (idx === -1) return;
+
+            cart[idx].quantity += delta;
+            if (cart[idx].quantity <= 0) {
+                cart.splice(idx, 1);
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const totalCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+            const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+            cartBadge.textContent = totalCount;
+            if (totalCount > 0) {
+                cartBadge.classList.remove('scale-0');
+            } else {
+                cartBadge.classList.add('scale-0');
+            }
+            cartCountHeader.textContent = totalCount;
+
+            const freeThreshold = 3500;
+            const diff = freeThreshold - subtotal;
+            const percent = Math.min((subtotal / freeThreshold) * 100, 100);
+            shippingProgressBar.style.width = `${percent}%`;
+
+            if (subtotal === 0) {
+                shippingMeterText.textContent = "До бесплатной доставки: 3 500 ₽";
+            } else if (diff > 0) {
+                shippingMeterText.textContent = `До бесплатной доставки осталось ${diff.toLocaleString('ru-RU')} ₽`;
+            } else {
+                shippingMeterText.textContent = "🎉 Поздравляем! Доставка бесплатная";
+            }
+
+            const shipping = subtotal >= freeThreshold || subtotal === 0 ? 0 : 350;
+            const total = subtotal + shipping;
+
+            cartSubtotal.textContent = `${subtotal.toLocaleString('ru-RU')} ₽`;
+            cartDeliveryText.textContent = shipping === 0 ? (subtotal === 0 ? "—" : "Бесплатно") : `${shipping} ₽`;
+            cartTotal.textContent = `${total.toLocaleString('ru-RU')} ₽`;
+
+            if (cart.length === 0) {
+                cartItemsList.innerHTML = `
+                    <div class="h-64 flex flex-col items-center justify-center text-center text-hut-clay space-y-3">
+                        <span class="text-4xl">🕯️</span>
+                        <p class="text-sm">Ваша корзина пуста</p>
+                        <button onclick="toggleCart(false)" class="text-xs uppercase text-hut-rose font-semibold tracking-wider hover:underline">
+                            Перейти к покупкам
+                        </button>
+                    </div>
+                `;
+            } else {
+                cartItemsList.innerHTML = cart.map(item => `
+                    <div class="flex items-center space-x-3 bg-white p-3 rounded-xl border border-hut-linen shadow-sm">
+                        <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded-lg bg-hut-sand" onerror="this.src='https://placehold.co/100x100/E5D6C5/6B2D35?text=Candle'">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-xs font-semibold text-hut-wine truncate">${item.name}</h4>
+                            <p class="text-[11px] text-hut-clay">${item.price.toLocaleString('ru-RU')} ₽</p>
+                            <div class="flex items-center space-x-2 mt-2">
+                                <button onclick="changeQuantity(${item.id}, -1)" class="w-6 h-6 rounded bg-hut-sand text-hut-wine text-xs flex items-center justify-center hover:bg-hut-linen font-bold">-</button>
+                                <span class="text-xs font-medium w-4 text-center text-hut-wine">${item.quantity}</span>
+                                <button onclick="changeQuantity(${item.id}, 1)" class="w-6 h-6 rounded bg-hut-sand text-hut-wine text-xs flex items-center justify-center hover:bg-hut-linen font-bold">+</button>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-bold text-hut-wine">${(item.price * item.quantity).toLocaleString('ru-RU')} ₽</p>
+                            <button onclick="changeQuantity(${item.id}, -${item.quantity})" class="text-[11px] text-hut-rose hover:text-hut-berry mt-2">Удалить</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function toggleCart(open = true) {
+            cartModal.classList.toggle('hidden', !open);
+        }
+
+        function openCheckoutModal() {
+            if (cart.length === 0) {
+                showToast("Добавьте товары в корзину перед оформлением", "⚠️");
+                return;
+            }
+            toggleCart(false);
+
+            const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            const shipping = subtotal >= 3500 ? 0 : 350;
+            const total = subtotal + shipping;
+
+            document.getElementById('modalOrderSubtotal').textContent = `${subtotal.toLocaleString('ru-RU')} ₽`;
+            document.getElementById('modalOrderShipping').textContent = shipping === 0 ? "Бесплатно" : `${shipping} ₽`;
+            document.getElementById('modalOrderTotal').textContent = `${total.toLocaleString('ru-RU')} ₽`;
+
+            checkoutModal.classList.remove('hidden');
+        }
+
+        function closeCheckoutModal() {
+            checkoutModal.classList.add('hidden');
+        }
+
+        function submitOrder(e) {
+            e.preventDefault();
+            checkoutModal.classList.add('hidden');
+            cart = [];
+            updateCartUI();
+            showToast("Заказ оформлен! Мастер свяжется с вами в течение 15 минут", "✨");
+        }
+
+        function subscribeNewsletter() {
+            const input = document.getElementById('newsInput');
+            if (input && input.value) {
+                showToast("Спасибо за подписку! Промокод WELCOME10 отправлен на почту", "💌");
+                input.value = '';
+            } else {
+                showToast("Пожалуйста, введите ваш email", "⚠️");
+            }
+        }
+
+        function showToast(message, icon = "✨") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = message;
+            toastIcon.textContent = icon;
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3500);
+        }
+
+        cartModal.addEventListener('click', (e) => {
+            if (e.target === cartModal) toggleCart(false);
+        });
+
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Initialize catalogue and start kinetic flight
+        window.addEventListener('load', () => {
+            renderProducts(products);
+            updateCartUI();
+            playFlight();
+        });
+
+        window.addEventListener('resize', () => {
+            playFlight();
+        });
+    </script>
+</body>
+</html>
