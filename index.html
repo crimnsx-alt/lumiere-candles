@@ -721,9 +721,10 @@
         // Telegram Bot & Order Notification Configuration
         // Заказы отправляются через Telegram Bot API и владельцу (для тестов), и Анжеле в личку!
         const TELEGRAM_CONFIG = {
-            botToken: localStorage.getItem('lumiere_bot_token') || '8454130004:AAFaGZ3fX7x3JtqU5b4U2m7xX9EXAMPLE',
-            chatIds: JSON.parse(localStorage.getItem('lumiere_chat_ids') || '["5829141042"]'),
-            angelaUsername: 'AngelaBacherikova', // Telegram username мастера
+            botToken: '8998636215:AAGsFx26TwgAKvxr_zUwFRLns738Mkjvffs',
+            botUsername: 'lumiere_kirov_bot',
+            chatIds: JSON.parse(localStorage.getItem('lumiere_chat_ids') || '[]'),
+            angelaUsername: 'lumiere_kirov_bot', // или личный контакт Анжелы
             masterPhone: '+7 (912) 000-00-00'
         };
 
