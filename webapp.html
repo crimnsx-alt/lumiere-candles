@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LUMIÈRE | Telegram Bot & Mini App — Анжела Бачерикова (г. Киров)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        hut: {
+                            sand: '#F7F2EB',       /* Светлый нейтральный крем */
+                            linen: '#E5D6C5',      /* Нюдовый лён */
+                            clay: '#A88F80',       /* Дымчатая глина / тауп */
+                            rose: '#E58C7F',       /* Мягкая коралловая роза */
+                            berry: '#A4434F',      /* Тёплый ягодный терракот */
+                            wine: '#6B2D35',       /* Глубокий бордово-шоколадный */
+                            dark: '#3E1C22'
+                        },
+                        tg: {
+                            header: '#6B2D35',
+                            bg: '#F7F2EB',
+                            bubbleIn: '#FFFFFF',
+                            bubbleOut: '#F0E2D8',
+                            btn: '#6B2D35'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #2a2224 0%, #1e1518 100%);
+            min-height: 100vh;
+        }
+        .tg-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .tg-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(168, 143, 128, 0.4);
+            border-radius: 9999px;
+        }
+        .tg-tap:active {
+            transform: scale(0.97);
+            transition: transform 0.1s ease;
+        }
+        .view-panel {
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        .view-panel.hidden {
+            display: none;
+            opacity: 0;
+            transform: translateY(6px);
+        }
+        .view-panel.active {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-0 sm:p-4 text-hut-dark font-sans antialiased selection:bg-hut-rose selection:text-white">
+
+    <!-- Главный контейнер смартфона Telegram Mini App -->
+    <div class="w-full max-w-[440px] h-[100vh] sm:h-[890px] sm:max-h-[95vh] bg-hut-sand sm:rounded-[44px] shadow-2xl overflow-hidden flex flex-col relative border-0 sm:border-[8px] sm:border-[#2f2427]">
+
+        <!-- Верхний переключатель режима (Чат с ботом / WebApp магазин) -->
+        <div class="bg-hut-dark text-hut-sand px-4 py-2 flex items-center justify-between text-xs border-b border-hut-wine/40 z-50">
+            <div class="flex items-center space-x-1.5 font-medium tracking-wide">
+                <span class="inline-block w-2 h-2 rounded-full bg-hut-rose animate-pulse"></span>
+                <span>@lumiere_kirov_bot</span>
+            </div>
+            <div class="flex bg-white/10 rounded-full p-0.5">
+                <button id="tabWebAppBtn" onclick="switchView('webapp')" class="px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-hut-rose text-white">
+                    ✨ Mini App Магазин
+                </button>
+                <button id="tabChatBtn" onclick="switchView('chat')" class="px-3 py-1 rounded-full text-[11px] font-semibold transition-all text-hut-linen hover:text-white">
+                    💬 Чат бота
+                </button>
+            </div>
+        </div>
+
+        <!-- Telegram Mini App Header -->
+        <div class="bg-hut-wine text-white px-4 py-3 flex items-center justify-between z-40 shadow-sm shrink-0">
+            <div class="flex items-center space-x-2.5">
+                <button onclick="switchView('chat')" class="text-xs text-hut-linen/80 hover:text-white font-medium flex items-center space-x-1 tg-tap">
+                    <span>Закрыть</span>
+                </button>
+            </div>
+            <div class="flex flex-col items-center">
+                <span class="font-serif text-lg font-bold tracking-widest leading-none">LUMIÈRE</span>
+                <span class="text-[9px] text-hut-rose uppercase tracking-widest font-sans mt-0.5">Мастерская Анжелы Бачериковой • г. Киров</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <a href="https://t.me/Angisept" target="_blank" class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-xs hover:bg-white/20 transition-colors" title="Написать Анжеле @Angisept">
+                    👩‍🎨
+                </a>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- 1. РЕЖИМ WEBAPP (КАТАЛОГ СВЕЧЕЙ И КОРЗИНА) -->
+        <!-- ============================================== -->
+        <div id="viewWebApp" class="view-panel active flex-1 flex flex-col overflow-hidden relative bg-hut-sand">
+            
+            <!-- Баннер приветствия -->
+            <div class="p-3 pb-1">
+                <div class="bg-gradient-to-r from-hut-wine to-hut-berry text-white p-3.5 rounded-2xl shadow-md flex items-center justify-between relative overflow-hidden">
+                    <div class="relative z-10 max-w-[70%]">
+                        <span class="inline-block px-2 py-0.5 rounded-md bg-hut-rose text-[9px] font-bold uppercase tracking-wider text-hut-dark mb-1">
+                            г. Киров • Ручная работа
+                        </span>
+                        <h3 class="font-serif text-base font-semibold leading-tight">Свечи & декор Анжелы Бачериковой</h3>
+                        <p class="text-[10px] text-hut-linen mt-0.5 leading-snug">Самовывоз в Кирове • СДЭК по РФ бесплатно от 3 500 ₽</p>
+                    </div>
+                    <div class="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-white/20 shadow-inner">
+                        <img src="images/hero_bedroom.jpg" class="w-full h-full object-cover" alt="Candle" onerror="this.src='https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=300&q=80'">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Горизонтальные фильтры категорий -->
+            <div class="px-3 py-2 flex items-center space-x-1.5 overflow-x-auto no-scrollbar shrink-0">
+                <button onclick="setFilter('all', this)" class="cat-pill active px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-hut-wine text-white shadow-sm transition-all tg-tap">
+                    Все изделия
+                </button>
+                <button onclick="setFilter('candles', this)" class="cat-pill px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-hut-linen/60 text-hut-wine hover:bg-hut-linen transition-all tg-tap">
+                    🕯️ Свечи
+                </button>
+                <button onclick="setFilter('decor', this)" class="cat-pill px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-hut-linen/60 text-hut-wine hover:bg-hut-linen transition-all tg-tap">
+                    🏺 Гипс & Подносы
+                </button>
+                <button onclick="setFilter('diffusers', this)" class="cat-pill px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-hut-linen/60 text-hut-wine hover:bg-hut-linen transition-all tg-tap">
+                    🌿 Диффузоры
+                </button>
+                <button onclick="setFilter('sets', this)" class="cat-pill px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-hut-linen/60 text-hut-wine hover:bg-hut-linen transition-all tg-tap">
+                    🎁 Наборы
+                </button>
+            </div>
+
+            <!-- Сетка товаров (скроллируемая область) -->
+            <div id="catalogList" class="flex-1 overflow-y-auto tg-scrollbar px-3 py-1 space-y-3 pb-24">
+                <!-- Карточки рендерятся через JS -->
+            </div>
+
+            <!-- Фирменная нижняя кнопка Telegram MainButton -->
+            <div id="tgMainButtonContainer" class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-hut-sand via-hut-sand/90 to-transparent pointer-events-none z-30">
+                <button id="tgMainButton" onclick="openCartModal()" class="w-full py-3.5 px-5 rounded-2xl bg-hut-wine hover:bg-hut-dark text-white font-semibold text-xs tracking-wider uppercase shadow-xl flex items-center justify-between transition-all pointer-events-auto transform translate-y-20 opacity-0 tg-tap border border-hut-rose/30">
+                    <span class="flex items-center space-x-2">
+                        <span id="tgBtnCount" class="w-6 h-6 rounded-full bg-hut-rose text-hut-dark flex items-center justify-center text-xs font-bold">1</span>
+                        <span>Корзина заказа</span>
+                    </span>
+                    <span id="tgBtnTotal" class="text-sm font-bold text-hut-rose">1 490 ₽</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- 2. РЕЖИМ ЧАТА С ТЕЛЕГРАМ-БОТОМ -->
+        <!-- ============================================== -->
+        <div id="viewChat" class="view-panel hidden flex-1 flex flex-col bg-[#e7d9cd]/50 relative overflow-hidden">
+            
+            <div id="chatHistory" class="flex-1 overflow-y-auto tg-scrollbar p-3 space-y-3 pb-4">
+                <div class="text-center">
+                    <span class="bg-hut-linen/70 text-hut-clay text-[10px] font-medium px-3 py-1 rounded-full uppercase tracking-wider">Сегодня</span>
+                </div>
+
+                <div class="flex justify-end">
+                    <div class="bg-hut-wine text-white text-xs py-2 px-3.5 rounded-2xl rounded-tr-none max-w-[75%] shadow-sm">
+                        /start
+                        <div class="text-[9px] text-hut-linen/60 text-right mt-0.5">16:30</div>
+                    </div>
+                </div>
+
+                <div class="flex justify-start">
+                    <div class="bg-white text-hut-dark text-xs rounded-2xl rounded-tl-none max-w-[88%] shadow-sm border border-hut-linen overflow-hidden">
+                        <img src="images/top_3_woodslice.jpg" class="w-full h-36 object-cover" alt="Welcome LUMIERE" onerror="this.src='https://images.unsplash.com/photo-1605651202774-7d573fd3f12d?auto=format&fit=crop&w=600&q=80'">
+                        <div class="p-3.5 space-y-2">
+                            <h4 class="font-serif text-base font-bold text-hut-wine leading-tight">Мастерская LUMIÈRE • Анжела Бачерикова ✨</h4>
+                            <p class="text-[11px] text-hut-clay leading-relaxed font-light">
+                                Авторские свечи из 100% соевого воска, гипсовый интерьерный декор и диффузоры ручной работы (г. Киров).
+                            </p>
+                            <div class="bg-hut-sand p-2 rounded-xl border border-hut-linen text-[10px] text-hut-wine space-y-0.5">
+                                <div>📍 Самовывоз в Кирове — бесплатно</div>
+                                <div>📦 Доставка: СДЭК / Почта (бесплатно от 3 500 ₽)</div>
+                                <div>👩‍🎨 Мастер в Telegram: <b>@Angisept</b></div>
+                            </div>
+                        </div>
+
+                        <!-- Инлайн-кнопки бота -->
+                        <div class="p-2 pt-0 space-y-1.5 border-t border-hut-sand mt-1">
+                            <button onclick="switchView('webapp')" class="w-full py-2.5 bg-hut-wine text-white rounded-xl font-semibold text-xs flex items-center justify-center space-x-2 shadow-sm tg-tap">
+                                <span>🕯️ Открыть каталог (Mini App)</span>
+                            </button>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <a href="https://t.me/Angisept" target="_blank" class="py-2 bg-hut-sand hover:bg-hut-linen text-hut-wine text-[11px] rounded-lg font-medium border border-hut-linen text-center">
+                                    Написать @Angisept
+                                </a>
+                                <button onclick="sendChatMessage('Доставка')" class="py-2 bg-hut-sand hover:bg-hut-linen text-hut-wine text-[11px] rounded-lg font-medium border border-hut-linen">
+                                    Доставка в Кирове
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-[9px] text-hut-clay px-3 pb-2 text-right">16:30</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Нижняя панель ввода сообщения -->
+            <div class="p-2.5 bg-white border-t border-hut-linen flex items-center space-x-2 shrink-0">
+                <button onclick="switchView('webapp')" class="p-2 rounded-full bg-hut-sand text-hut-wine hover:bg-hut-linen border border-hut-linen tg-tap" title="Открыть каталог">
+                    🛍️
+                </button>
+                <input id="chatInput" type="text" placeholder="Напишите сообщение..." class="flex-1 bg-hut-sand/60 px-3.5 py-2 rounded-full text-xs text-hut-dark border border-hut-linen focus:outline-none focus:border-hut-rose" onkeypress="if(event.key==='Enter') sendUserMessage()">
+                <button onclick="sendUserMessage()" class="w-8 h-8 rounded-full bg-hut-wine text-white flex items-center justify-center text-xs tg-tap">
+                    ➤
+                </button>
+            </div>
+        </div>
+
+        <!-- Модалка детального просмотра товара -->
+        <div id="productDetailModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-xs">
+            <div class="bg-hut-sand w-full max-w-sm rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto tg-scrollbar p-5 space-y-4 border border-hut-linen shadow-2xl relative animate-slide-up">
+                <button onclick="closeProductModal()" class="absolute top-4 right-4 w-7 h-7 rounded-full bg-hut-linen/80 text-hut-wine flex items-center justify-center font-bold text-sm">✕</button>
+                
+                <div class="h-48 rounded-2xl overflow-hidden bg-hut-linen relative">
+                    <img id="detailImg" src="" class="w-full h-full object-cover" alt="Candle detail">
+                    <span id="detailBadge" class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-white/90 text-hut-wine"></span>
+                </div>
+
+                <div>
+                    <h3 id="detailName" class="font-serif text-2xl font-bold text-hut-wine leading-tight"></h3>
+                    <div class="flex items-center space-x-3 text-xs text-hut-clay mt-1">
+                        <span id="detailVol"></span>
+                        <span>•</span>
+                        <span class="text-hut-berry font-medium">★ 5.0 (г. Киров)</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3.5 rounded-2xl border border-hut-linen space-y-2 text-xs">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-hut-rose block">Особенности & Ноты</span>
+                    <div class="space-y-1 text-[11px]">
+                        <div><span class="font-semibold text-hut-wine">Верхние ноты:</span> <span id="detailTopNotes" class="text-hut-dark/80"></span></div>
+                        <div><span class="font-semibold text-hut-wine">Ноты сердца:</span> <span id="detailHeartNotes" class="text-hut-dark/80"></span></div>
+                        <div><span class="font-semibold text-hut-wine">Шлейф/Состав:</span> <span id="detailBaseNotes" class="text-hut-dark/80"></span></div>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <span class="text-[11px] font-semibold text-hut-wine block uppercase tracking-wider">Формат:</span>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <label class="flex items-center space-x-2 p-2.5 rounded-xl border border-hut-linen bg-white cursor-pointer hover:border-hut-rose transition-colors">
+                            <input type="radio" name="wickChoice" value="Деревянный (трескучий)" checked class="accent-hut-wine">
+                            <span class="text-[11px] font-medium text-hut-wine">🪵 Деревянный фитиль</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-2.5 rounded-xl border border-hut-linen bg-white cursor-pointer hover:border-hut-rose transition-colors">
+                            <input type="radio" name="wickChoice" value="Хлопковый эко" class="accent-hut-wine">
+                            <span class="text-[11px] font-medium text-hut-wine">🧵 Хлопковый эко</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex items-center justify-between border-t border-hut-linen">
+                    <div>
+                        <span class="text-[10px] text-hut-clay uppercase tracking-wider block">Стоимость</span>
+                        <span id="detailPrice" class="text-xl font-bold text-hut-wine"></span>
+                    </div>
+                    <button id="detailAddBtn" onclick="" class="px-6 py-3 rounded-xl bg-hut-wine hover:bg-hut-berry text-white text-xs font-semibold uppercase tracking-wider shadow-md tg-tap">
+                        Добавить в заказ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка Корзины и оформления Telegram Checkout -->
+        <div id="cartModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end justify-center backdrop-blur-xs">
+            <div class="bg-hut-sand w-full max-w-sm rounded-t-3xl max-h-[90vh] flex flex-col border-t border-hut-linen shadow-2xl p-5 space-y-4">
+                
+                <div class="flex items-center justify-between border-b border-hut-linen pb-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-serif text-2xl font-bold text-hut-wine">Ваш заказ</span>
+                        <span id="cartModalCount" class="text-[11px] bg-hut-rose/30 text-hut-wine font-bold px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <button onclick="closeCartModal()" class="w-7 h-7 rounded-full bg-hut-linen/80 text-hut-wine flex items-center justify-center font-bold text-sm">✕</button>
+                </div>
+
+                <div id="cartItemsList" class="flex-1 overflow-y-auto tg-scrollbar space-y-2.5 max-h-48 pr-1"></div>
+
+                <!-- Оформление доставки -->
+                <div class="space-y-3 pt-2 border-t border-hut-linen text-xs">
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-hut-wine tracking-wider mb-1">Способ получения:</label>
+                        <select id="orderDeliveryType" onchange="updateDeliveryFee()" class="w-full bg-white border border-hut-linen rounded-xl p-2.5 text-xs text-hut-dark focus:outline-none focus:border-hut-rose font-medium">
+                            <option value="pickup">📍 Самовывоз в Кирове (Бесплатно)</option>
+                            <option value="courier">🛵 Курьер / Яндекс Доставка по Кирову (250 ₽)</option>
+                            <option value="cdek">📦 СДЭК по России (350 ₽ / бесплатно от 3 500 ₽)</option>
+                            <option value="post">📮 Почта России (350 ₽ / бесплатно от 3 500 ₽)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-hut-wine tracking-wider mb-1">Имя / Telegram:</label>
+                            <input id="orderName" type="text" placeholder="@username" class="w-full bg-white border border-hut-linen rounded-xl p-2 text-xs text-hut-dark focus:outline-none focus:border-hut-rose">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-hut-wine tracking-wider mb-1">Телефон:</label>
+                            <input id="orderPhone" type="tel" placeholder="+7 (999) 000-00-00" class="w-full bg-white border border-hut-linen rounded-xl p-2 text-xs text-hut-dark focus:outline-none focus:border-hut-rose">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-hut-wine tracking-wider mb-1">Город и адрес ПВЗ:</label>
+                        <input id="orderAddress" type="text" placeholder="г. Киров, Октябрьский пр-т / ПВЗ СДЭК" class="w-full bg-white border border-hut-linen rounded-xl p-2 text-xs text-hut-dark focus:outline-none focus:border-hut-rose">
+                    </div>
+                </div>
+
+                <!-- Итоги -->
+                <div class="bg-hut-linen/40 p-3 rounded-2xl border border-hut-linen space-y-1 text-xs">
+                    <div class="flex justify-between text-hut-clay text-[11px]">
+                        <span>Товары:</span>
+                        <span id="orderSubtotalText" class="font-semibold text-hut-wine">0 ₽</span>
+                    </div>
+                    <div class="flex justify-between text-hut-clay text-[11px]">
+                        <span>Доставка:</span>
+                        <span id="orderDeliveryText" class="font-semibold text-hut-wine">Бесплатно</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-bold text-hut-wine pt-1 border-t border-hut-linen">
+                        <span>К оплате:</span>
+                        <span id="orderTotalText" class="text-hut-berry font-bold">0 ₽</span>
+                    </div>
+                </div>
+
+                <button onclick="submitTelegramOrder()" class="w-full py-3.5 bg-hut-wine hover:bg-hut-dark text-white rounded-2xl font-bold text-xs uppercase tracking-wider shadow-lg tg-tap flex items-center justify-center space-x-2">
+                    <span>Отправить заказ в Telegram ✈️</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Уведомление (Telegram Toast) -->
+        <div id="tgToast" class="absolute top-16 left-4 right-4 bg-hut-dark text-white py-2 px-3 rounded-xl shadow-lg transform -translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center justify-between text-xs">
+            <span id="tgToastText">Товар добавлен</span>
+            <span class="text-hut-rose font-bold text-sm">✨</span>
+        </div>
+
+    </div>
+
+    <script>
+        const BOT_TOKEN = '8998636215:AAGsFx26TwgAKvxr_zUwFRLns738Mkjvffs';
+        // Получатели уведомлений: 
+        // 1. @Cr1mnsx (chat_id: 7452781280)
+        // 2. @Angisept (chat_id добавляется при подключении)
+        const RECIPIENT_CHAT_IDS = ['7452781280'];
+
+        const candleProducts = [
+            {
+                id: 1,
+                name: "Кашемир & Теплая Ваниль",
+                cat: "candles",
+                catBadge: "Уютный вечер",
+                price: 1490,
+                vol: "200 мл • 45 ч горения",
+                image: "images/hero_bedroom.jpg",
+                topNotes: "Мадагаскарская ваниль, сандал",
+                heartNotes: "Теплый кашемир, бобы тонка",
+                baseNotes: "Дымчатый сандал, белый мускус",
+                wick: "Деревянный (трескучий)"
+            },
+            {
+                id: 2,
+                name: "Табачные Листья & Бергамот",
+                cat: "candles",
+                catBadge: "Хит продаж",
+                price: 1650,
+                vol: "220 мл • 50 ч горения",
+                image: "images/top_3_woodslice.jpg",
+                topNotes: "Калабрийский бергамот, цедра",
+                heartNotes: "Терпкий табак, гвоздика",
+                baseNotes: "Атласский кедр, пачули, янтарь",
+                wick: "Хлопковый эко"
+            },
+            {
+                id: 3,
+                name: "Дикий Пион & Розовая Замша",
+                cat: "candles",
+                catBadge: "Цветочный Грасс",
+                price: 1550,
+                vol: "200 мл • 45 ч горения",
+                image: "images/hero_ceramics.jpg",
+                topNotes: "Красное яблоко, смородина",
+                heartNotes: "Лепестки майского пиона, роза",
+                baseNotes: "Мягкая замша, пудровый мускус",
+                wick: "Деревянный (трескучий)"
+            },
+            {
+                id: 4,
+                name: "Овальный поднос из гипса «L'Ovale»",
+                cat: "decor",
+                catBadge: "Гипс ручной работы",
+                price: 590,
+                vol: "18 × 9.5 см • Влагостойкий",
+                image: "images/hero_fireplace.jpg",
+                topNotes: "Скульптурный высокопрочный гипс",
+                heartNotes: "Ручная отливка и шлифовка",
+                baseNotes: "Матовое гидрофобное покрытие",
+                wick: "Под свечи и украшения"
+            },
+            {
+                id: 5,
+                name: "Ребристый стакан «Plissé»",
+                cat: "decor",
+                catBadge: "Гипсовый декор",
+                price: 690,
+                vol: "Высота 8 см",
+                image: "images/top_1_plaid.jpg",
+                topNotes: "Фактурная рельефная форма",
+                heartNotes: "Под чайные свечи или канцелярию",
+                baseNotes: "Ручная работа в Кирове",
+                wick: "Интерьерный декор"
+            },
+            {
+                id: 6,
+                name: "Аромадиффузор «Морская Соль & Шалфей»",
+                cat: "diffusers",
+                catBadge: "Аромат для дома",
+                price: 890,
+                vol: "50 мл • До 2.5 месяцев",
+                image: "images/hero_window.jpg",
+                topNotes: "Морской бриз, бергамот",
+                heartNotes: "Шалфей, белые цветы",
+                baseNotes: "Амбретта, минеральное дерево",
+                wick: "5 фибровых палочек"
+            },
+            {
+                id: 7,
+                name: "Подарочный Сет «L'Atmosphère»",
+                cat: "sets",
+                catBadge: "Подарочный бокс",
+                price: 2890,
+                vol: "Свеча + Поднос + Спички в колбе",
+                image: "images/hero_gift_box.jpg",
+                topNotes: "Соевая свеча 100 мл",
+                heartNotes: "Гипсовый поднос «L'Ovale»",
+                baseNotes: "Крафтовая коробка с лентой",
+                wick: "Подарочный набор"
+            }
+        ];
+
+        let cart = [];
+        let currentFilter = 'all';
+
+        function renderCatalog(items) {
+            const container = document.getElementById('catalogList');
+            container.innerHTML = items.map(p => `
+                <div class="bg-white rounded-2xl p-3 border border-hut-linen shadow-sm flex space-x-3 items-center hover:border-hut-rose/50 transition-all">
+                    <div class="w-24 h-24 rounded-xl overflow-hidden bg-hut-linen/40 shrink-0 relative cursor-pointer" onclick="openProductModal(${p.id})">
+                        <img src="${p.image}" class="w-full h-full object-cover" alt="${p.name}" onerror="this.src='https://placehold.co/200x200/E5D6C5/6B2D35?text=Lumiere'">
+                        <span class="absolute top-1.5 left-1.5 text-[8px] font-bold bg-white/90 text-hut-wine px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                            ${p.catBadge}
+                        </span>
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <div class="cursor-pointer" onclick="openProductModal(${p.id})">
+                            <h4 class="font-serif text-base font-semibold text-hut-wine leading-tight truncate">${p.name}</h4>
+                            <p class="text-[10px] text-hut-clay mt-0.5 line-clamp-1">${p.topNotes}</p>
+                            <span class="text-[10px] text-hut-dark/60 block mt-0.5">${p.vol}</span>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-hut-sand">
+                            <span class="text-sm font-bold text-hut-berry">${p.price.toLocaleString('ru-RU')} ₽</span>
+                            <div class="flex items-center space-x-1.5">
+                                <button onclick="openProductModal(${p.id})" class="px-2.5 py-1 text-[11px] rounded-lg bg-hut-sand text-hut-wine font-medium hover:bg-hut-linen tg-tap">
+                                    Детали
+                                </button>
+                                <button onclick="addToCartDirect(${p.id})" class="w-7 h-7 rounded-lg bg-hut-wine hover:bg-hut-berry text-white flex items-center justify-center font-bold text-sm shadow-sm tg-tap">
+                                    +
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setFilter(cat, btn) {
+            currentFilter = cat;
+            document.querySelectorAll('.cat-pill').forEach(b => {
+                b.classList.remove('bg-hut-wine', 'text-white', 'shadow-sm');
+                b.classList.add('bg-hut-linen/60', 'text-hut-wine');
+            });
+            btn.classList.add('bg-hut-wine', 'text-white', 'shadow-sm');
+            btn.classList.remove('bg-hut-linen/60', 'text-hut-wine');
+
+            if (cat === 'all') {
+                renderCatalog(candleProducts);
+            } else {
+                renderCatalog(candleProducts.filter(p => p.cat === cat));
+            }
+        }
+
+        function addToCartDirect(id) {
+            const product = candleProducts.find(p => p.id === id);
+            if (!product) return;
+
+            const existing = cart.find(c => c.id === id);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+            updateCart();
+            showTgToast(`«${product.name}» в корзине`);
+        }
+
+        let selectedProduct = null;
+        function openProductModal(id) {
+            selectedProduct = candleProducts.find(p => p.id === id);
+            if (!selectedProduct) return;
+
+            document.getElementById('detailImg').src = selectedProduct.image;
+            document.getElementById('detailName').textContent = selectedProduct.name;
+            document.getElementById('detailBadge').textContent = selectedProduct.catBadge;
+            document.getElementById('detailVol').textContent = selectedProduct.vol;
+            document.getElementById('detailTopNotes').textContent = selectedProduct.topNotes;
+            document.getElementById('detailHeartNotes').textContent = selectedProduct.heartNotes;
+            document.getElementById('detailBaseNotes').textContent = selectedProduct.baseNotes;
+            document.getElementById('detailPrice').textContent = `${selectedProduct.price.toLocaleString('ru-RU')} ₽`;
+
+            const btn = document.getElementById('detailAddBtn');
+            btn.onclick = () => {
+                const wickRadio = document.querySelector('input[name="wickChoice"]:checked').value;
+                cart.push({ ...selectedProduct, wick: wickRadio, qty: 1 });
+                updateCart();
+                closeProductModal();
+                showTgToast(`Добавлено: ${wickRadio}`);
+            };
+
+            document.getElementById('productDetailModal').classList.remove('hidden');
+        }
+
+        function closeProductModal() {
+            document.getElementById('productDetailModal').classList.add('hidden');
+        }
+
+        function getDeliveryFee() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const type = document.getElementById('orderDeliveryType').value;
+            if (type === 'pickup') return 0;
+            if (type === 'courier') return 250;
+            return subtotal >= 3500 ? 0 : 350;
+        }
+
+        function updateDeliveryFee() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const fee = getDeliveryFee();
+            document.getElementById('orderDeliveryText').textContent = fee === 0 ? "Бесплатно" : `${fee} ₽`;
+            document.getElementById('orderTotalText').textContent = `${(subtotal + fee).toLocaleString('ru-RU')} ₽`;
+        }
+
+        function updateCart() {
+            const totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+            const mainBtn = document.getElementById('tgMainButton');
+            const btnCount = document.getElementById('tgBtnCount');
+            const btnTotal = document.getElementById('tgBtnTotal');
+
+            if (totalCount > 0) {
+                btnCount.textContent = totalCount;
+                btnTotal.textContent = `${subtotal.toLocaleString('ru-RU')} ₽`;
+                mainBtn.classList.remove('translate-y-20', 'opacity-0');
+            } else {
+                mainBtn.classList.add('translate-y-20', 'opacity-0');
+            }
+
+            document.getElementById('cartModalCount').textContent = totalCount;
+            document.getElementById('orderSubtotalText').textContent = `${subtotal.toLocaleString('ru-RU')} ₽`;
+            updateDeliveryFee();
+
+            const list = document.getElementById('cartItemsList');
+            if (cart.length === 0) {
+                list.innerHTML = `<div class="text-center py-6 text-xs text-hut-clay">В корзине пока пусто 🕯️</div>`;
+            } else {
+                list.innerHTML = cart.map((item, idx) => `
+                    <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-hut-linen">
+                        <div class="flex items-center space-x-2 min-w-0">
+                            <img src="${item.image}" class="w-10 h-10 rounded-lg object-cover bg-hut-linen shrink-0" onerror="this.src='https://placehold.co/100x100/E5D6C5/6B2D35?text=Candle'">
+                            <div class="min-w-0">
+                                <h5 class="text-xs font-semibold text-hut-wine truncate">${item.name}</h5>
+                                <span class="text-[10px] text-hut-clay block">${item.wick || 'Ручная работа'}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2 shrink-0">
+                            <span class="text-xs font-bold text-hut-wine">${(item.price * item.qty).toLocaleString('ru-RU')} ₽</span>
+                            <button onclick="removeCartItem(${idx})" class="text-hut-rose hover:text-hut-berry text-xs px-1 font-bold">✕</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function removeCartItem(idx) {
+            cart.splice(idx, 1);
+            updateCart();
+            if (cart.length === 0) closeCartModal();
+        }
+
+        function openCartModal() {
+            document.getElementById('cartModal').classList.remove('hidden');
+        }
+
+        function closeCartModal() {
+            document.getElementById('cartModal').classList.add('hidden');
+        }
+
+        // Отправка заказа в Telegram бота, мастеру (@Angisept) и владельцу (@Cr1mnsx)
+        async function submitTelegramOrder() {
+            if (cart.length === 0) return;
+
+            const name = document.getElementById('orderName').value.trim() || 'Покупатель';
+            const phone = document.getElementById('orderPhone').value.trim() || 'не указан';
+            const address = document.getElementById('orderAddress').value.trim() || 'г. Киров';
+            const deliveryType = document.getElementById('orderDeliveryType');
+            const deliveryLabel = deliveryType.options[deliveryType.selectedIndex].text;
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const deliveryFee = getDeliveryFee();
+            const grandTotal = subtotal + deliveryFee;
+
+            const orderId = 'LK-' + Math.floor(1000 + Math.random() * 9000);
+            const itemsSummary = cart.map((i, idx) => `${idx + 1}. <b>${i.name}</b> (${i.qty} шт.) — <b>${(i.price * i.qty).toLocaleString('ru-RU')} ₽</b>`).join('\n');
+
+            const tgMessage = `🕯 <b>НОВЫЙ ЗАКАЗ ИЗ MINI APP #${orderId}</b>\n` +
+                `━━━━━━━━━━━━━━━━━━━━\n` +
+                `👤 <b>Клиент:</b> ${name}\n` +
+                `📞 <b>Телефон:</b> <code>${phone}</code>\n` +
+                `📍 <b>Адрес/ПВЗ:</b> ${address}\n` +
+                `🚚 <b>Доставка:</b> ${deliveryLabel}\n` +
+                `━━━━━━━━━━━━━━━━━━━━\n` +
+                `📦 <b>Состав заказа:</b>\n${itemsSummary}\n` +
+                `━━━━━━━━━━━━━━━━━━━━\n` +
+                `💰 <b>Итого:</b> <b>${grandTotal.toLocaleString('ru-RU')} ₽</b>\n` +
+                `👩‍🎨 Мастер: @Angisept | Контроль: @Cr1mnsx`;
+
+            // Отправляем в Telegram Bot API
+            for (const chatId of RECIPIENT_CHAT_IDS) {
+                try {
+                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: chatId,
+                            text: tgMessage,
+                            parse_mode: 'HTML'
+                        })
+                    });
+                } catch (e) {
+                    console.warn("Send error", e);
+                }
+            }
+
+            closeCartModal();
+            cart = [];
+            updateCart();
+            switchView('chat');
+
+            setTimeout(() => {
+                appendChatMessage(`
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-1.5 text-hut-berry font-bold text-xs">
+                            <span>✅ Заказ #${orderId} принят!</span>
+                        </div>
+                        <p class="text-[11px] text-hut-clay">Спасибо! Уведомление отправлено мастеру Анжеле (@Angisept) и на дублирование @Cr1mnsx.</p>
+                        
+                        <div class="bg-hut-sand p-2.5 rounded-xl border border-hut-linen text-[11px] space-y-1">
+                            <div class="font-semibold text-hut-wine">Состав заказа:</div>
+                            <div class="text-[10px] text-hut-dark/80 whitespace-pre-line">${itemsSummary.replace(/<[^>]*>/g, '')}</div>
+                            <div class="pt-1.5 border-t border-hut-linen flex justify-between font-bold text-hut-wine">
+                                <span>Итого:</span>
+                                <span class="text-hut-berry">${grandTotal.toLocaleString('ru-RU')} ₽</span>
+                            </div>
+                        </div>
+
+                        <div class="text-[10px] text-hut-clay space-y-0.5">
+                            <div>📍 <b>Клиент:</b> ${name} (${phone})</div>
+                            <div>🚚 <b>Доставка:</b> ${deliveryLabel}</div>
+                            <div>🏠 <b>Адрес:</b> ${address}</div>
+                        </div>
+
+                        <div class="pt-2">
+                            <a href="https://t.me/Angisept?text=${encodeURIComponent('Здравствуйте! Оформил(а) заказ #' + orderId + ' на сумму ' + grandTotal + ' ₽')}" target="_blank" class="w-full py-2 bg-hut-wine text-white text-[11px] rounded-lg font-semibold flex items-center justify-center space-x-1">
+                                <span>Написать Анжеле в @Angisept ✈️</span>
+                            </a>
+                        </div>
+                    </div>
+                `, false);
+            }, 400);
+        }
+
+        function switchView(mode) {
+            const webAppPanel = document.getElementById('viewWebApp');
+            const chatPanel = document.getElementById('viewChat');
+            const tabWebAppBtn = document.getElementById('tabWebAppBtn');
+            const tabChatBtn = document.getElementById('tabChatBtn');
+
+            if (mode === 'webapp') {
+                webAppPanel.classList.remove('hidden');
+                webAppPanel.classList.add('active');
+                chatPanel.classList.add('hidden');
+                chatPanel.classList.remove('active');
+
+                tabWebAppBtn.className = "px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-hut-rose text-white";
+                tabChatBtn.className = "px-3 py-1 rounded-full text-[11px] font-semibold transition-all text-hut-linen hover:text-white";
+            } else {
+                chatPanel.classList.remove('hidden');
+                chatPanel.classList.add('active');
+                webAppPanel.classList.add('hidden');
+                webAppPanel.classList.remove('active');
+
+                tabChatBtn.className = "px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-hut-rose text-white";
+                tabWebAppBtn.className = "px-3 py-1 rounded-full text-[11px] font-semibold transition-all text-hut-linen hover:text-white";
+            }
+        }
+
+        function sendUserMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            appendChatMessage(text, true);
+            input.value = '';
+
+            setTimeout(() => {
+                if (text.toLowerCase().includes('аромат') || text.toLowerCase().includes('нот')) {
+                    appendChatMessage(`В коллекции Анжелы: уютные древесные («Табак & Бергамот»), десертные («Ваниль & Кашемир»), свежие («Морская соль & Шалфей») и гипсовый декор. Открыть каталог для заказа?`, false);
+                } else if (text.toLowerCase().includes('доставк') || text.toLowerCase().includes('киров')) {
+                    appendChatMessage(`Самовывоз в г. Киров — бесплатно! Также есть быстрая курьерская доставка по городу и отправка СДЭК по РФ (бесплатно от 3 500 ₽). 📦`, false);
+                } else {
+                    appendChatMessage(`Спасибо за вопрос! Мастер Анжела (@Angisept) с радостью ответит и соберет ваш заказ в Кирове. Для заказа нажмите «Mini App Магазин» выше!`, false);
+                }
+            }, 600);
+        }
+
+        function sendChatMessage(text) {
+            appendChatMessage(text, true);
+            setTimeout(() => {
+                if (text === 'Доставка') {
+                    appendChatMessage(`Условия получения в Кирове и по РФ:<br>• <b>Самовывоз в Кирове</b>: бесплатно<br>• <b>Курьер по Кирову</b>: 250 ₽<br>• <b>СДЭК по РФ</b>: 350 ₽ (бесплатно от 3 500 ₽)`, false);
+                } else {
+                    appendChatMessage(`Мастерская LUMIÈRE:<br>👩‍🎨 Мастер: Анжела Бачерикова (@Angisept)<br>📍 г. Киров, ул. Октябрьский пр-т<br>💬 Бот заказов: @lumiere_kirov_bot`, false);
+                }
+            }, 500);
+        }
+
+        function appendChatMessage(htmlContent, isUser = false) {
+            const history = document.getElementById('chatHistory');
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = isUser ? "flex justify-end" : "flex justify-start";
+
+            if (isUser) {
+                msgDiv.innerHTML = `
+                    <div class="bg-hut-wine text-white text-xs py-2 px-3.5 rounded-2xl rounded-tr-none max-w-[75%] shadow-sm">
+                        ${htmlContent}
+                        <div class="text-[9px] text-hut-linen/60 text-right mt-0.5">${timeStr}</div>
+                    </div>
+                `;
+            } else {
+                msgDiv.innerHTML = `
+                    <div class="bg-white text-hut-dark text-xs p-3.5 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm border border-hut-linen space-y-1">
+                        ${htmlContent}
+                        <div class="text-[9px] text-hut-clay text-right mt-1">${timeStr}</div>
+                    </div>
+                `;
+            }
+
+            history.appendChild(msgDiv);
+            history.scrollTop = history.scrollHeight;
+        }
+
+        function showTgToast(text) {
+            const toast = document.getElementById('tgToast');
+            document.getElementById('tgToastText').textContent = text;
+            toast.classList.remove('-translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        window.addEventListener('load', () => {
+            renderCatalog(candleProducts);
+            updateCart();
+        });
+    </script>
+</body>
+</html>

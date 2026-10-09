@@ -507,11 +507,11 @@
                 <p class="text-xs text-hut-linen/80">г. Киров, мастерская LUMIÈRE</p>
                 <p class="text-xs text-hut-linen/80 mt-1">Мастер: Анжела Бачерикова</p>
                 <div class="flex items-center space-x-3 mt-3">
-                    <a href="https://t.me/" target="_blank" class="px-2.5 py-1 bg-white/10 hover:bg-hut-berry text-[11px] rounded-lg transition-colors flex items-center space-x-1">
-                        <span>✈️ Telegram</span>
+                    <a href="https://t.me/Angisept" target="_blank" class="px-2.5 py-1 bg-white/10 hover:bg-hut-berry text-[11px] rounded-lg transition-colors flex items-center space-x-1">
+                        <span>✈️ Telegram (@Angisept)</span>
                     </a>
-                    <a href="https://wa.me/" target="_blank" class="px-2.5 py-1 bg-white/10 hover:bg-emerald-800 text-[11px] rounded-lg transition-colors flex items-center space-x-1">
-                        <span>💬 WhatsApp</span>
+                    <a href="https://t.me/lumiere_kirov_bot" target="_blank" class="px-2.5 py-1 bg-white/10 hover:bg-hut-berry text-[11px] rounded-lg transition-colors flex items-center space-x-1">
+                        <span>🤖 Бот заказов</span>
                     </a>
                 </div>
             </div>
@@ -723,8 +723,9 @@
         const TELEGRAM_CONFIG = {
             botToken: '8998636215:AAGsFx26TwgAKvxr_zUwFRLns738Mkjvffs',
             botUsername: 'lumiere_kirov_bot',
-            chatIds: JSON.parse(localStorage.getItem('lumiere_chat_ids') || '[]'),
-            angelaUsername: 'lumiere_kirov_bot', // или личный контакт Анжелы
+            // Chat IDs получателей: 7452781280 (@Cr1mnsx) + Chat ID Анжелы (@Angisept) при подключении
+            chatIds: JSON.parse(localStorage.getItem('lumiere_chat_ids') || '["7452781280"]'),
+            angelaUsername: 'Angisept', // Telegram мастера Анжелы
             masterPhone: '+7 (912) 000-00-00'
         };
 
