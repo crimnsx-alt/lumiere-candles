@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LUMIÈRE | Telegram Bot & Mini App — Анжела Бачерикова (г. Киров)</title>
+    <!-- Официальный Telegram Mini App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,10 +74,10 @@
 <body class="flex items-center justify-center p-0 sm:p-4 text-hut-dark font-sans antialiased selection:bg-hut-rose selection:text-white">
 
     <!-- Главный контейнер смартфона Telegram Mini App -->
-    <div class="w-full max-w-[440px] h-[100vh] sm:h-[890px] sm:max-h-[95vh] bg-hut-sand sm:rounded-[44px] shadow-2xl overflow-hidden flex flex-col relative border-0 sm:border-[8px] sm:border-[#2f2427]">
+    <div id="mainPhoneFrame" class="w-full max-w-[440px] h-[100vh] sm:h-[890px] sm:max-h-[95vh] bg-hut-sand sm:rounded-[44px] shadow-2xl overflow-hidden flex flex-col relative border-0 sm:border-[8px] sm:border-[#2f2427]">
 
-        <!-- Верхний переключатель режима (Чат с ботом / WebApp магазин) -->
-        <div class="bg-hut-dark text-hut-sand px-4 py-2 flex items-center justify-between text-xs border-b border-hut-wine/40 z-50">
+        <!-- Верхний переключатель режима (Чат с ботом / WebApp магазин для браузера) -->
+        <div id="simulatorTopBar" class="bg-hut-dark text-hut-sand px-4 py-2 flex items-center justify-between text-xs border-b border-hut-wine/40 z-50">
             <div class="flex items-center space-x-1.5 font-medium tracking-wide">
                 <span class="inline-block w-2 h-2 rounded-full bg-hut-rose animate-pulse"></span>
                 <span>@lumiere_kirov_bot</span>
@@ -91,10 +93,10 @@
         </div>
 
         <!-- Telegram Mini App Header -->
-        <div class="bg-hut-wine text-white px-4 py-3 flex items-center justify-between z-40 shadow-sm shrink-0">
+        <div id="tgAppHeader" class="bg-hut-wine text-white px-4 py-3 flex items-center justify-between z-40 shadow-sm shrink-0">
             <div class="flex items-center space-x-2.5">
-                <button onclick="switchView('chat')" class="text-xs text-hut-linen/80 hover:text-white font-medium flex items-center space-x-1 tg-tap">
-                    <span>Закрыть</span>
+                <button id="tgHeaderCloseBtn" onclick="handleHeaderClose()" class="text-xs text-hut-linen/80 hover:text-white font-medium flex items-center space-x-1 tg-tap py-1 px-1.5 rounded-lg hover:bg-white/10">
+                    <span>✕ Закрыть</span>
                 </button>
             </div>
             <div class="flex flex-col items-center">
@@ -323,6 +325,11 @@
                         <label class="block text-[10px] uppercase font-bold text-hut-wine tracking-wider mb-1">Город и адрес ПВЗ:</label>
                         <input id="orderAddress" type="text" placeholder="г. Киров, Октябрьский пр-т / ПВЗ СДЭК" class="w-full bg-white border border-hut-linen rounded-xl p-2 text-xs text-hut-dark focus:outline-none focus:border-hut-rose">
                     </div>
+
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-hut-wine tracking-wider mb-1">Пожелание / Открытка (бесплатно):</label>
+                        <input id="orderComment" type="text" placeholder="Текст для открытки или пожелание мастеру" class="w-full bg-white border border-hut-linen rounded-xl p-2 text-xs text-hut-dark focus:outline-none focus:border-hut-rose">
+                    </div>
                 </div>
 
                 <!-- Итоги -->
@@ -347,6 +354,34 @@
             </div>
         </div>
 
+        <!-- Нативное окно подтверждения заказа в Telegram Mini App -->
+        <div id="orderSuccessTgModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
+            <div class="bg-hut-sand w-full max-w-sm rounded-3xl p-6 text-center space-y-4 border border-hut-linen shadow-2xl relative animate-scale-up">
+                <div class="w-16 h-16 rounded-full bg-hut-rose/20 text-hut-wine flex items-center justify-center text-3xl mx-auto border border-hut-rose/40 animate-pulse">
+                    🕯️
+                </div>
+                <div>
+                    <span id="orderSuccessId" class="text-[10px] uppercase font-bold tracking-widest text-hut-rose block mb-1">ЗАКАЗ #LK-0000</span>
+                    <h3 class="font-serif text-2xl font-bold text-hut-wine leading-tight">Заказ успешно оформлен!</h3>
+                    <p class="text-xs text-hut-clay mt-1.5 leading-relaxed">
+                        Информация мгновенно передана мастеру <b>Анжеле (@Angisept)</b>. Она свяжется с вами в Telegram для подтверждения и отправки.
+                    </p>
+                </div>
+
+                <div id="orderSuccessSummary" class="bg-white p-3.5 rounded-2xl border border-hut-linen text-left text-xs space-y-1">
+                </div>
+
+                <div class="space-y-2 pt-2">
+                    <button onclick="handleHeaderClose()" class="w-full py-3 bg-hut-wine hover:bg-hut-dark text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md tg-tap">
+                        Вернуться в чат (Закрыть) ✓
+                    </button>
+                    <a id="orderSuccessTgMasterLink" href="https://t.me/Angisept" target="_blank" class="block w-full py-2.5 bg-hut-linen/60 hover:bg-hut-linen text-hut-wine rounded-xl font-semibold text-xs text-center border border-hut-linen tg-tap">
+                        Написать мастеру @Angisept ✈️
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- Уведомление (Telegram Toast) -->
         <div id="tgToast" class="absolute top-16 left-4 right-4 bg-hut-dark text-white py-2 px-3 rounded-xl shadow-lg transform -translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center justify-between text-xs">
             <span id="tgToastText">Товар добавлен</span>
@@ -361,6 +396,73 @@
         // 1. @Cr1mnsx (chat_id: 7452781280)
         // 2. @Angisept (chat_id добавляется при подключении)
         const RECIPIENT_CHAT_IDS = ['7452781280'];
+
+        // Telegram WebApp API Integration
+        const tg = window.Telegram?.WebApp;
+        const isInsideTelegram = !!(tg && (tg.initData || (tg.platform && tg.platform !== 'unknown')));
+
+        function initTelegramApp() {
+            if (isInsideTelegram && tg) {
+                try {
+                    tg.ready();
+                    tg.expand();
+                    tg.setHeaderColor('#6B2D35');
+                    tg.setBackgroundColor('#F7F2EB');
+                    tg.enableClosingConfirmation();
+                } catch (e) {
+                    console.log("Telegram WebApp init error:", e);
+                }
+
+                // В нативном Telegram раскрываем на 100% экрана без рамки смартфона
+                document.body.className = "m-0 p-0 bg-hut-sand text-hut-dark font-sans antialiased selection:bg-hut-rose selection:text-white min-h-screen flex flex-col";
+                const frame = document.getElementById('mainPhoneFrame');
+                if (frame) {
+                    frame.className = "w-full min-h-screen flex-1 bg-hut-sand flex flex-col relative border-0 shadow-none";
+                }
+
+                // Скрываем симуляторный верхний тулбар "Чат / WebApp"
+                const simBar = document.getElementById('simulatorTopBar');
+                if (simBar) simBar.style.display = 'none';
+
+                // Автоматически подставляем данные пользователя из Telegram
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const u = tg.initDataUnsafe.user;
+                    const nameField = document.getElementById('orderName');
+                    if (nameField) {
+                        const fullName = [u.first_name, u.last_name].filter(Boolean).join(' ');
+                        nameField.value = fullName || (u.username ? '@' + u.username : '');
+                    }
+                    if (u.username) {
+                        window.currentUserTg = '@' + u.username;
+                    }
+                    if (u.id) {
+                        window.currentUserTgId = u.id;
+                    }
+                }
+            }
+        }
+
+        function tgHaptic(type = 'light') {
+            if (isInsideTelegram && tg && tg.HapticFeedback) {
+                try {
+                    if (type === 'success') {
+                        tg.HapticFeedback.notificationOccurred('success');
+                    } else if (type === 'medium') {
+                        tg.HapticFeedback.impactOccurred('medium');
+                    } else {
+                        tg.HapticFeedback.impactOccurred('light');
+                    }
+                } catch(e) {}
+            }
+        }
+
+        function handleHeaderClose() {
+            if (isInsideTelegram && tg) {
+                try { tg.close(); } catch(e) {}
+            } else {
+                switchView('chat');
+            }
+        }
 
         const candleProducts = [
             {
@@ -631,6 +733,7 @@
             const name = document.getElementById('orderName').value.trim() || 'Покупатель';
             const phone = document.getElementById('orderPhone').value.trim() || 'не указан';
             const address = document.getElementById('orderAddress').value.trim() || 'г. Киров';
+            const comment = document.getElementById('orderComment') ? document.getElementById('orderComment').value.trim() : '';
             const deliveryType = document.getElementById('orderDeliveryType');
             const deliveryLabel = deliveryType.options[deliveryType.selectedIndex].text;
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -639,18 +742,24 @@
 
             const orderId = 'LK-' + Math.floor(1000 + Math.random() * 9000);
             const itemsSummary = cart.map((i, idx) => `${idx + 1}. <b>${i.name}</b> (${i.qty} шт.) — <b>${(i.price * i.qty).toLocaleString('ru-RU')} ₽</b>`).join('\n');
+            const itemsPlain = cart.map((i, idx) => `• ${i.name} (${i.qty} шт.) — ${(i.price * i.qty).toLocaleString('ru-RU')} ₽`).join('\n');
 
             const tgMessage = `🕯 <b>НОВЫЙ ЗАКАЗ ИЗ MINI APP #${orderId}</b>\n` +
                 `━━━━━━━━━━━━━━━━━━━━\n` +
                 `👤 <b>Клиент:</b> ${name}\n` +
                 `📞 <b>Телефон:</b> <code>${phone}</code>\n` +
+                (window.currentUserTg ? `✈️ <b>Telegram:</b> ${window.currentUserTg}\n` : '') +
                 `📍 <b>Адрес/ПВЗ:</b> ${address}\n` +
                 `🚚 <b>Доставка:</b> ${deliveryLabel}\n` +
+                (comment ? `💌 <b>Пожелание / открытка:</b> ${comment}\n` : '') +
                 `━━━━━━━━━━━━━━━━━━━━\n` +
                 `📦 <b>Состав заказа:</b>\n${itemsSummary}\n` +
                 `━━━━━━━━━━━━━━━━━━━━\n` +
                 `💰 <b>Итого:</b> <b>${grandTotal.toLocaleString('ru-RU')} ₽</b>\n` +
                 `👩‍🎨 Мастер: @Angisept | Контроль: @Cr1mnsx`;
+
+            // Вибрация успеха в нативном Telegram
+            tgHaptic('success');
 
             // Отправляем в Telegram Bot API
             for (const chatId of RECIPIENT_CHAT_IDS) {
@@ -670,9 +779,30 @@
             }
 
             closeCartModal();
+
+            // Показываем нативное подтверждение заказа в Mini App
+            const successModal = document.getElementById('orderSuccessTgModal');
+            if (successModal) {
+                document.getElementById('orderSuccessId').textContent = `ЗАКАЗ #${orderId}`;
+                document.getElementById('orderSuccessSummary').innerHTML = `
+                    <div class="font-semibold text-hut-wine mb-1">Состав заказа:</div>
+                    <div class="text-[10px] text-hut-dark/80 whitespace-pre-line mb-2">${itemsPlain}</div>
+                    <div class="pt-1.5 border-t border-hut-linen flex justify-between font-bold text-hut-wine">
+                        <span>Итого с доставкой:</span>
+                        <span class="text-hut-berry">${grandTotal.toLocaleString('ru-RU')} ₽</span>
+                    </div>
+                `;
+                document.getElementById('orderSuccessTgMasterLink').href = `https://t.me/Angisept?text=${encodeURIComponent('Здравствуйте! Оформил(а) заказ #' + orderId + ' на сумму ' + grandTotal + ' ₽ в Mini App')}`;
+                successModal.classList.remove('hidden');
+            }
+
             cart = [];
             updateCart();
-            switchView('chat');
+
+            // Дублируем сообщение в симулятор чата (для браузера)
+            if (!isInsideTelegram) {
+                switchView('chat');
+            }
 
             setTimeout(() => {
                 appendChatMessage(`
@@ -803,6 +933,7 @@
         }
 
         window.addEventListener('load', () => {
+            initTelegramApp();
             renderCatalog(candleProducts);
             updateCart();
         });

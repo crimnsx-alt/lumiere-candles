@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-Telegram-бот для мастерской LUMIÈRE (Анжела Бачерикова, г. Киров).
-Отправляет уведомления о заказах:
-- Мастеру: @Angisept
-- Владельцу (дублирование): @Cr1mnsx (Chat ID: 7452781280)
+Telegram-бот для авторской мастерской LUMIÈRE (Анжела Бачерикова, г. Киров).
+Поддерживает:
+1. Запуск нативного Telegram Mini App магазина через меню и инлайн-кнопки.
+2. Маршрутизацию заказов:
+   - Мастеру: @Angisept
+   - Владельцу (дублирование): @Cr1mnsx (Chat ID: 7452781280)
+3. Автоматическую регистрацию ролей по username (@Angisept, @Cr1mnsx).
+4. Команды /start, /catalog, /shipping, /contact, /status, /test.
 """
 
 import sys
@@ -14,6 +18,8 @@ import urllib.request
 import urllib.parse
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "bot_config.json")
+MINI_APP_URL = "https://crimnsx-alt.github.io/lumiere-candles/webapp.html"
+WEBSITE_URL = "https://crimnsx-alt.github.io/lumiere-candles/"
 
 def load_config():
     if os.path.exists(CONFIG_PATH):
@@ -52,7 +58,7 @@ def api_call(token, method, data=None):
         print(f"HTTP Error {e.code}: {error_body}")
         return None
     except Exception as e:
-        print(f"Ошибка вызова Telegram API: {e}")
+        print(f"Ошибка вызова Telegram API ({method}): {e}")
         return None
 
 def send_message(token, chat_id, text, reply_markup=None):
@@ -69,6 +75,66 @@ def send_message(token, chat_id, text, reply_markup=None):
     res = api_call(token, "sendMessage", payload)
     return res and res.get("ok", False)
 
+def get_main_keyboard():
+    """Основная клавиатура с кнопкой запуска Telegram Mini App прямо внутри Telegram"""
+    return {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "🕯 Открыть бутик LUMIÈRE (Mini App)",
+                    "web_app": {"url": MINI_APP_URL}
+                }
+            ],
+            [
+                {
+                    "text": "👩‍🎨 Написать Анжеле @Angisept",
+                    "url": "https://t.me/Angisept"
+                },
+                {
+                    "text": "🌐 Веб-сайт мастерской",
+                    "url": WEBSITE_URL
+                }
+            ],
+            [
+                {
+                    "text": "🚚 Доставка в Кирове и по РФ",
+                    "callback_data": "shipping"
+                },
+                {
+                    "text": "🌿 О соевом воске и уходе",
+                    "callback_data": "about"
+                }
+            ]
+        ]
+    }
+
+def setup_bot_ui(token):
+    """Настройка нативной кнопки меню (Menu Button) и команд бота в Telegram"""
+    print("⚙️ Регистрация кнопки меню Telegram Mini App...")
+    # Нативная кнопка "🛍 Открыть бутик" возле поля ввода сообщения
+    menu_res = api_call(token, "setChatMenuButton", {
+        "menu_button": {
+            "type": "web_app",
+            "text": "🛍 Открыть бутик",
+            "web_app": {"url": MINI_APP_URL}
+        }
+    })
+    if menu_res and menu_res.get("ok"):
+        print("✅ Menu Button успешно зарегистрирована!")
+
+    # Список команд для всплывающего меню [/]
+    cmd_res = api_call(token, "setMyCommands", {
+        "commands": [
+            {"command": "start", "description": "✨ Главное меню и каталог свечей"},
+            {"command": "catalog", "description": "🕯 Открыть Telegram Mini App бутик"},
+            {"command": "shipping", "description": "🚚 Условия доставки в Кирове и по РФ"},
+            {"command": "contact", "description": "👩‍🎨 Связаться с мастером Анжелой"},
+            {"command": "status", "description": "📊 Статус мастерской и уведомлений"}
+        ]
+    })
+    if cmd_res and cmd_res.get("ok"):
+        print("✅ Команды бота успешно настроены!")
+
 def format_order_message(order_data):
     order_id = order_data.get("order_id", "LK-8419")
     client_name = order_data.get("name", "Мария Смирнова")
@@ -76,7 +142,7 @@ def format_order_message(order_data):
     tg = order_data.get("tg", "@mariya_k")
     address = order_data.get("address", "г. Киров, Октябрьский пр-т, 24 / ПВЗ СДЭК")
     shipping = order_data.get("shipping", "Курьер по Кирову (Яндекс Доставка, 250 ₽)")
-    comment = order_data.get("comment", "Крафтовая упаковка и открытка")
+    comment = order_data.get("comment", "")
     items = order_data.get("items", [
         {"name": "Свеча «Кашемир & Теплая Ваниль» (200 мл)", "qty": 1, "price": 1490},
         {"name": "Овальный поднос из гипса «L'Ovale»", "qty": 1, "price": 590}
@@ -89,15 +155,17 @@ def format_order_message(order_data):
         for i, it in enumerate(items)
     ])
 
+    comment_line = f"💌 <b>Пожелание / открытка:</b> {comment}\n" if comment else ""
+
     return (
-        f"🕯 <b>НОВЫЙ ЗАКАЗ С САЙТА #{order_id}</b>\n"
+        f"🕯 <b>НОВЫЙ ЗАКАЗ ИЗ MINI APP #{order_id}</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
         f"👤 <b>Клиент:</b> {client_name}\n"
         f"📞 <b>Телефон:</b> <code>{phone}</code>\n"
         f"✈️ <b>Telegram:</b> {tg}\n"
         f"📍 <b>Адрес / ПВЗ:</b> {address}\n"
         f"🚚 <b>Доставка:</b> {shipping}\n"
-        f"💌 <b>Пожелание:</b> {comment}\n"
+        f"{comment_line}"
         f"━━━━━━━━━━━━━━━━━━━━\n"
         f"📦 <b>Состав заказа:</b>\n{items_text}\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
@@ -111,18 +179,29 @@ def broadcast_order(cfg, order_data):
     token = cfg.get("bot_token")
     msg = format_order_message(order_data)
 
+    reply_markup = {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "🛍 Открыть каталог",
+                    "web_app": {"url": MINI_APP_URL}
+                }
+            ]
+        ]
+    }
+
     # 1. Отправка Анжеле (@Angisept)
     angela_id = cfg.get("angela_chat_id")
     if angela_id:
-        send_message(token, angela_id, msg)
-        print(f"✅ Заказ #{order_data.get('order_id')} отправлен Анжеле (@Angisept)")
+        send_message(token, angela_id, msg, reply_markup=reply_markup)
+        print(f"✅ Заказ #{order_data.get('order_id')} отправлен мастеру Анжеле (@Angisept)")
     else:
         print("⚠️ Chat ID Анжелы (@Angisept) пока не зарегистрирован (нужно нажать /start в боте).")
 
     # 2. Дублирование владельцу (@Cr1mnsx)
     owner_id = cfg.get("owner_chat_id", "7452781280")
     if owner_id:
-        send_message(token, owner_id, msg)
+        send_message(token, owner_id, msg, reply_markup=reply_markup)
         print(f"✅ Заказ #{order_data.get('order_id')} продублирован владельцу (@Cr1mnsx)")
 
 def send_test_order(cfg):
@@ -156,6 +235,9 @@ def run_polling(cfg):
     print(f"Мастер (@Angisept): Chat ID = {cfg.get('angela_chat_id') or 'Ожидает /start'}")
     print("="*60)
 
+    # Инициализация интерфейса WebApp в Telegram
+    setup_bot_ui(token)
+
     last_update_id = 0
     while True:
         try:
@@ -166,6 +248,37 @@ def run_polling(cfg):
             if updates and updates.get("ok"):
                 for u in updates.get("result", []):
                     last_update_id = u["update_id"]
+
+                    # 1. Обработка нажатий на инлайн-кнопки (Callback Query)
+                    cb = u.get("callback_query")
+                    if cb:
+                        cb_id = cb["id"]
+                        cb_data = cb.get("data", "")
+                        cb_chat_id = str(cb["message"]["chat"]["id"])
+                        api_call(token, "answerCallbackQuery", {"callback_query_id": cb_id})
+
+                        if cb_data == "shipping":
+                            shipping_text = (
+                                "🚚 <b>Условия доставки мастерской LUMIÈRE</b>\n\n"
+                                "• <b>Самовывоз в Кирове:</b> Бесплатно (центр города, по предварительному согласованию)\n"
+                                "• <b>Курьер по Кирову:</b> 250 ₽ (Яндекс Доставка до двери)\n"
+                                "• <b>СДЭК и Почта России:</b> 350 ₽ (<b>Бесплатно</b> при заказе от 3 500 ₽)\n\n"
+                                "📦 Каждое изделие бережно упаковывается в крафтовый бокс с наполнителем, тишью и льняной лентой."
+                            )
+                            send_message(token, cb_chat_id, shipping_text, reply_markup=get_main_keyboard())
+                        elif cb_data == "about":
+                            about_text = (
+                                "🕯 <b>О мастерской LUMIÈRE (г. Киров)</b>\n\n"
+                                "Создатель и мастер: <b>Бачерикова Анжела Александровна</b>.\n\n"
+                                "🌿 <b>100% соевый воск:</b> Без парафина, продуктов нефтепереработки и вредных примесей.\n"
+                                "🪵 <b>Деревянный фитиль:</b> При горении издаёт медитативный треск домашнего камина.\n"
+                                "✨ <b>Масла из Грасса:</b> Селективные парфюмерные композиции из столицы французской парфюмерии.\n"
+                                "🏺 <b>Гипсовый декор:</b> Подносы и кашпо ручной отливки с влагозащитным матовым покрытием."
+                            )
+                            send_message(token, cb_chat_id, about_text, reply_markup=get_main_keyboard())
+                        continue
+
+                    # 2. Обработка текстовых сообщений и WebApp данных
                     msg = u.get("message")
                     if not msg:
                         continue
@@ -174,6 +287,17 @@ def run_polling(cfg):
                     text = msg.get("text", "").strip()
                     username = (msg["from"].get("username") or "").lower()
                     first_name = msg["from"].get("first_name", "Гость")
+
+                    # Проверяем отправку данных из WebApp (если через sendData)
+                    if "web_app_data" in msg:
+                        data_str = msg["web_app_data"].get("data", "{}")
+                        try:
+                            order_obj = json.loads(data_str)
+                            broadcast_order(cfg, order_obj)
+                            send_message(token, chat_id, f"✅ <b>Ваш заказ #{order_obj.get('order_id')} принят!</b>\nМастер @Angisept уже собирает его в Кирове.")
+                        except Exception as ex:
+                            print(f"Ошибка парсинга web_app_data: {ex}")
+                        continue
 
                     # Автоматическое распознавание Анжелы (@Angisept)
                     if username == "angisept" or text.startswith("/im_angela"):
@@ -184,7 +308,7 @@ def run_polling(cfg):
                             f"Бот <b>@{bot_username}</b> успешно подключен к вашей мастерской LUMIÈRE (г. Киров).\n\n"
                             f"Теперь каждый заказ с сайта и Telegram Mini App будет мгновенно приходить прямо сюда в ваш личный чат со всеми деталями, составом изделий, номером телефона и адресом покупателя!"
                         )
-                        send_message(token, chat_id, welcome_angela)
+                        send_message(token, chat_id, welcome_angela, reply_markup=get_main_keyboard())
 
                         # Уведомляем владельца @Cr1mnsx
                         owner_id = cfg.get("owner_chat_id")
@@ -201,24 +325,67 @@ def run_polling(cfg):
                             send_test_order(cfg)
                             continue
                         elif text.startswith("/status"):
-                            angela_status = f"✅ подключена (<code>{cfg.get('angela_chat_id')}</code>)" if cfg.get('angela_chat_id') else "⏳ ожидает перехода в бота @Angisept"
-                            send_message(token, chat_id, f"📊 <b>Статус заказов LUMIÈRE</b>:\n\n• Дублирование @Cr1mnsx: ✅ подключено\n• Мастер @Angisept: {angela_status}\n\nКоманда /test — отправить тестовый заказ.")
+                            angela_status = f"✅ подключена (<code>{cfg.get('angela_chat_id')}</code>)" if cfg.get('angela_chat_id') else "⏳ ожидает первого перехода в бота @Angisept"
+                            send_message(token, chat_id, (
+                                f"📊 <b>Статус заказов LUMIÈRE</b>:\n\n"
+                                f"• Дублирование @Cr1mnsx: ✅ подключено (<code>{chat_id}</code>)\n"
+                                f"• Мастер @Angisept: {angela_status}\n"
+                                f"• Mini App: <code>{MINI_APP_URL}</code>\n\n"
+                                f"Команда /test — отправить тестовый заказ в оба чата."
+                            ), reply_markup=get_main_keyboard())
                             continue
 
-                    if text.startswith("/start"):
+                    # Команда /catalog
+                    if text.startswith("/catalog"):
                         send_message(token, chat_id, (
-                            f"👋 Здравствуйте, <b>{first_name}</b>!\n\n"
-                            f"Это бот авторской мастерской свечей <b>LUMIÈRE</b> (Анжела Бачерикова, г. Киров).\n\n"
-                            f"Сайт мастерской: https://crimnsx-alt.github.io/lumiere-candles/\n"
-                            f"Связь с мастером: @Angisept"
-                        ))
+                            "🕯 <b>Каталог свечей и декора LUMIÈRE</b>\n\n"
+                            "Нажмите кнопку ниже, чтобы открыть бутик внутри Telegram:"
+                        ), reply_markup=get_main_keyboard())
+                        continue
+
+                    # Команда /shipping
+                    if text.startswith("/shipping"):
+                        shipping_text = (
+                            "🚚 <b>Условия доставки мастерской LUMIÈRE</b>\n\n"
+                            "• <b>Самовывоз в Кирове:</b> Бесплатно\n"
+                            "• <b>Курьер по Кирову:</b> 250 ₽\n"
+                            "• <b>СДЭК и Почта по РФ:</b> 350 ₽ (бесплатно от 3 500 ₽)"
+                        )
+                        send_message(token, chat_id, shipping_text, reply_markup=get_main_keyboard())
+                        continue
+
+                    # Команда /contact
+                    if text.startswith("/contact"):
+                        send_message(token, chat_id, (
+                            "👩‍🎨 <b>Контакты мастерской LUMIÈRE</b>\n\n"
+                            "• Мастер: <b>Бачерикова Анжела Александровна</b>\n"
+                            "• Личный Telegram мастера: @Angisept\n"
+                            "• Город: г. Киров\n"
+                            f"• Веб-сайт: {WEBSITE_URL}"
+                        ), reply_markup=get_main_keyboard())
+                        continue
+
+                    # Команда /start или любое первое сообщение
+                    if text.startswith("/start") or text:
+                        welcome_msg = (
+                            f"✨ Здравствуйте, <b>{first_name}</b>!\n\n"
+                            f"Добро пожаловать в авторскую мастерскую свечей и гипсового декора <b>LUMIÈRE</b> "
+                            f"(мастер Анжела Бачерикова, г. Киров).\n\n"
+                            f"🕯 100% соевый воск & селективные ароматы из Грасса\n"
+                            f"🪵 Деревянные трескучие фитили\n"
+                            f"🏺 Эстетичный интерьерный декор из гипса\n"
+                            f"📦 Самовывоз в Кирове и доставка СДЭК по всей России\n\n"
+                            f"Нажмите кнопку <b>«🕯 Открыть бутик LUMIÈRE»</b> или <b>«🛍 Открыть бутик»</b> внизу экрана, "
+                            f"чтобы выбрать свечи прямо в Telegram:"
+                        )
+                        send_message(token, chat_id, welcome_msg, reply_markup=get_main_keyboard())
 
             time.sleep(1)
         except KeyboardInterrupt:
             print("\nБот остановлен.")
             break
         except Exception as e:
-            print(f"Ошибка в цикле: {e}")
+            print(f"Ошибка в цикле polling: {e}")
             time.sleep(2)
 
 if __name__ == "__main__":
